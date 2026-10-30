@@ -35,28 +35,33 @@ draw_text(35, 285,
     + string(manufacturing_readiness) + "%");
 
 // Event panel
-draw_set_color(c_white);
-draw_rectangle(350, 105, 920, 420, false);
+var _event = design_events[current_event_index];
 
-draw_set_color(c_black);
-
-draw_text(370, 120, event_title);
+draw_text(370, 120, _event.title);
 
 draw_text_ext(
     370, 155,
-    event_description,
-    -1, 520);
+    _event.description,
+    -1, 520
+);
 
-draw_text(370, 230, "SELECT YOUR RESPONSE:");
+if (!event_resolved)
+{
+    draw_text(370, 230, "SELECT YOUR RESPONSE:");
 
-draw_text(370, 265,
-    "1. Rework placement and routing");
-
-draw_text(370, 305,
-    "2. Apply a quick patch");
-
-draw_text(370, 345,
-    "3. Request a design review");
+    for (var i = 0; i < array_length(_event.choices); i++)
+    {
+        draw_text(
+            370,
+            265 + (i * 40),
+            string(i + 1) + ". " + _event.choices[i].text
+        );
+    }
+}
+else
+{
+    draw_text(370, 265, "EVENT RESOLVED");
+}
 
 draw_text(370, 385, game_message);
 
