@@ -1,12 +1,28 @@
 // Set the game window to a landscape size
 window_set_size(960, 540);
 
+
+// Player Resources
 days_remaining = 25;
 engineering_hours = 100;
 budget = 100;
 morale = 80;
+
 drc_violations = 25;
-manufacturing_readiness = 40;
+manufacturing_risk = 10;
+
+// Calculate manufacturing readiness
+calculate_manufacturing_readiness = function()
+{
+    manufacturing_readiness = clamp(
+        100 - (drc_violations * 2) - manufacturing_risk,
+        0,
+        100
+    );
+};
+
+// Set initial manufacturing readiness
+calculate_manufacturing_readiness();
 
 // Store reusable design events.
 design_events = [
