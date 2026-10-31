@@ -34,40 +34,83 @@ draw_text(35, 285,
     "Manufacturing readiness: "
     + string(manufacturing_readiness) + "%");
 
-// Event panel
-var _event = design_events[current_event_index];
+// --------------------------------------------------
+// EVENT DISPLAY
+// --------------------------------------------------
 
-draw_text(370, 120, _event.title);
-
-draw_text_ext(
-    370, 155,
-    _event.description,
-    -1, 520
-);
-
-if (!event_resolved)
+if (event_active)
 {
-    draw_text(370, 230, "SELECT YOUR RESPONSE:");
+    var _event = design_events[current_event_index];
 
-    for (var i = 0; i < array_length(_event.choices); i++)
+    draw_text(370, 120, _event.title);
+
+    draw_text_ext(
+        370, 155,
+        _event.description,
+        -1, 520
+    );
+
+    if (!event_resolved)
     {
-        draw_text(
-            370,
-            265 + (i * 40),
-            string(i + 1) + ". " + _event.choices[i].text
-        );
+        draw_text(370, 230, "SELECT YOUR RESPONSE:");
+
+        for (var i = 0; i < array_length(_event.choices); i++)
+        {
+            draw_text(
+                370,
+                265 + (i * 40),
+                string(i + 1) + ". " + _event.choices[i].text
+            );
+        }
+    }
+    else
+    {
+        draw_text(370, 265, "EVENT RESOLVED");
+
+        draw_text(370, 450, "Press ENTER to continue.");
+    }
+
+    draw_text(370, 385, game_message);
+
+    if (result_message != "")
+    {
+        draw_text(370, 405, result_message);
     }
 }
-else
-{
-    draw_text(370, 265, "EVENT RESOLVED");
-}
 
-draw_text(370, 385, game_message);
+// --------------------------------------------------
+// CAMPAIGN COMPLETION
+// --------------------------------------------------
 
-if (result_message != "")
+else if (campaign_complete)
 {
-    draw_text(370, 405, result_message);
+    draw_text(370, 160, "ROAD TO DFX");
+
+    draw_text(370, 210, "CAMPAIGN COMPLETE!");
+
+    draw_text_ext(
+        370, 260,
+        result_message,
+        -1, 520
+    );
+
+    draw_text(370, 350, "Final project status:");
+
+    draw_text(
+        370, 390,
+        "Days remaining: " + string(days_remaining)
+    );
+
+    draw_text(
+        370, 420,
+        "Engineering hours: " + string(engineering_hours)
+    );
+
+    draw_text(
+        370, 450,
+        "Manufacturing readiness: "
+        + string(manufacturing_readiness) + "%"
+    );
 }
 
 // Instructions

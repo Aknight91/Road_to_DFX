@@ -1,4 +1,8 @@
-/// @description Reusable event decision engine
+/// @description Event decisions and progression
+
+// --------------------------------------------------
+// PART 1: PROCESS PLAYER DECISIONS
+// --------------------------------------------------
 
 if (event_active && !event_resolved)
 {
@@ -45,5 +49,36 @@ if (event_active && !event_resolved)
             game_message =
                 "Insufficient resources for this decision.";
         }
+    }
+}
+
+
+// --------------------------------------------------
+// PART 2: ADVANCE TO THE NEXT EVENT
+// --------------------------------------------------
+
+if (event_resolved && keyboard_check_pressed(vk_enter))
+{
+    // Are there more events remaining?
+    if (current_event_index < array_length(design_events) - 1)
+    {
+        // Move to the next event.
+        current_event_index += 1;
+
+        // Reset the event state.
+        event_resolved = false;
+
+        game_message = "Choose your response below.";
+        result_message = "";
+    }
+    else
+    {
+        // No more events. Campaign is complete.
+        event_active = false;
+        campaign_complete = true;
+
+        game_message = "CAMPAIGN COMPLETE!";
+        result_message =
+            "You have reached the end of this prototype scenario.";
     }
 }

@@ -85,10 +85,11 @@ design_events = [
 
 
 // Track the active event.
-current_event_index = 1;
+current_event_index = 0;
 
 event_active = true;
 event_resolved = false;
+campaign_complete = false;
 
 game_message = "Choose your response below.";
 result_message = "";
