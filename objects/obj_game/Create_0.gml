@@ -89,7 +89,12 @@ current_event_index = 0;
 
 event_active = true;
 event_resolved = false;
+
 campaign_complete = false;
+campaign_failed = false;
+
+required_readiness = 50;
+failure_reason = "";
 
 game_message = "Choose your response below.";
 result_message = "";

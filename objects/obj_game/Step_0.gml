@@ -1,4 +1,4 @@
-/// @description Event decisions and progression
+/// @description Decisions, progression, and campaign outcomes
 
 // --------------------------------------------------
 // PART 1: PROCESS PLAYER DECISIONS
@@ -8,7 +8,6 @@ if (event_active && !event_resolved)
 {
     var _choice_index = -1;
 
-    // Detect player selection.
     if (keyboard_check_pressed(ord("1")))
         _choice_index = 0;
 
@@ -18,7 +17,6 @@ if (event_active && !event_resolved)
     else if (keyboard_check_pressed(ord("3")))
         _choice_index = 2;
 
-    // Process the selected choice.
     if (_choice_index != -1)
     {
         var _event = design_events[current_event_index];
@@ -38,11 +36,40 @@ if (event_active && !event_resolved)
             manufacturing_readiness =
                 clamp(manufacturing_readiness, 0, 100);
 
-            // Lock the event after successful selection.
             event_resolved = true;
 
             game_message = "Decision applied.";
             result_message = _choice.result;
+
+            // Check for immediate project failure.
+            if (engineering_hours <= 0)
+            {
+                campaign_failed = true;
+                event_active = false;
+                failure_reason =
+                    "Project failed: Engineering hours exhausted.";
+            }
+            else if (days_remaining <= 0)
+            {
+                campaign_failed = true;
+                event_active = false;
+                failure_reason =
+                    "Project failed: Schedule expired.";
+            }
+            else if (manufacturing_readiness <= 0)
+            {
+                campaign_failed = true;
+                event_active = false;
+                failure_reason =
+                    "Project failed: Manufacturing readiness reached 0%.";
+            }
+
+            // Display failure if a limit was reached.
+            if (campaign_failed)
+            {
+                game_message = "PROJECT FAILURE!";
+                result_message = failure_reason;
+            }
         }
         else
         {
@@ -57,15 +84,15 @@ if (event_active && !event_resolved)
 // PART 2: ADVANCE TO THE NEXT EVENT
 // --------------------------------------------------
 
-if (event_resolved && keyboard_check_pressed(vk_enter))
+if (event_active
+&& event_resolved
+&& keyboard_check_pressed(vk_enter))
 {
-    // Are there more events remaining?
     if (current_event_index < array_length(design_events) - 1)
     {
         // Move to the next event.
         current_event_index += 1;
 
-        // Reset the event state.
         event_resolved = false;
 
         game_message = "Choose your response below.";
@@ -73,12 +100,29 @@ if (event_resolved && keyboard_check_pressed(vk_enter))
     }
     else
     {
-        // No more events. Campaign is complete.
+        // All events have been completed.
         event_active = false;
-        campaign_complete = true;
 
-        game_message = "CAMPAIGN COMPLETE!";
-        result_message =
-            "You have reached the end of this prototype scenario.";
+        if (manufacturing_readiness >= required_readiness)
+        {
+            campaign_complete = true;
+
+            game_message = "MANUFACTURING RELEASE APPROVED!";
+
+            result_message =
+                "Congratulations! Your design met the "
+                + "prototype manufacturing readiness requirement.";
+        }
+        else
+        {
+            campaign_failed = true;
+
+            failure_reason =
+                "Project failed: Manufacturing readiness "
+                + "was below the required release threshold.";
+
+            game_message = "PROJECT FAILURE!";
+            result_message = failure_reason;
+        }
     }
 }

@@ -79,14 +79,14 @@ if (event_active)
 }
 
 // --------------------------------------------------
-// CAMPAIGN COMPLETION
+// CAMPAIGN VICTORY
 // --------------------------------------------------
 
 else if (campaign_complete)
 {
     draw_text(370, 160, "ROAD TO DFX");
 
-    draw_text(370, 210, "CAMPAIGN COMPLETE!");
+    draw_text(370, 210, "MANUFACTURING RELEASE APPROVED!");
 
     draw_text_ext(
         370, 260,
@@ -94,7 +94,42 @@ else if (campaign_complete)
         -1, 520
     );
 
-    draw_text(370, 350, "Final project status:");
+    draw_text(370, 350, "FINAL PROJECT STATUS:");
+
+    draw_text(
+        370, 390,
+        "Days remaining: " + string(days_remaining)
+    );
+
+    draw_text(
+        370, 420,
+        "Engineering hours: " + string(engineering_hours)
+    );
+
+    draw_text(
+        370, 450,
+        "Manufacturing readiness: "
+        + string(manufacturing_readiness) + "%"
+    );
+}
+
+// --------------------------------------------------
+// CAMPAIGN FAILURE
+// --------------------------------------------------
+
+else if (campaign_failed)
+{
+    draw_text(370, 160, "ROAD TO DFX");
+
+    draw_text(370, 210, "PROJECT FAILURE!");
+
+    draw_text_ext(
+        370, 260,
+        result_message,
+        -1, 520
+    );
+
+    draw_text(370, 350, "FINAL PROJECT STATUS:");
 
     draw_text(
         370, 390,
