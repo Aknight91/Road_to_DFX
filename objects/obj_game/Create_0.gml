@@ -34,28 +34,31 @@ design_events = [
             + "How will you respond?",
 
         choices: [
-            {
-                text: "Rework placement and routing",
-                hours_cost: 12,
-                days_cost: 0,
-                readiness_change: 0,
-                result: "Rework selected. 12 hours spent."
-            },
-            {
-                text: "Apply a quick patch",
-                hours_cost: 4,
-                days_cost: 0,
-                readiness_change: -10,
-                result: "Quick patch applied. Readiness -10%."
-            },
-            {
-                text: "Request a design review",
-                hours_cost: 2,
-                days_cost: 1,
-                readiness_change: 5,
-                result: "Review requested. 2 hours and 1 day spent."
-            }
-        ]
+    {
+        text: "Rework placement and routing",
+        hours_cost: 12,
+        days_cost: 0,
+        drc_change: 0,
+        risk_change: 0,
+        result: "Rework selected. 12 hours spent."
+    },
+    {
+        text: "Apply a quick patch",
+        hours_cost: 4,
+        days_cost: 0,
+        drc_change: 0,
+        risk_change: 10,
+        result: "Quick patch applied. Manufacturing risk increased."
+    },
+    {
+        text: "Request a design review",
+        hours_cost: 2,
+        days_cost: 1,
+        drc_change: 0,
+        risk_change: -5,
+        result: "Design review completed. Manufacturing risk reduced."
+    }
+]
 		
 	},
 	
@@ -68,34 +71,32 @@ design_events = [
             + "that are too close together. The manufacturer "
             + "has flagged the design. How will you respond?",
 
-        choices: [
-            {
-                text: "Rework routing to increase via spacing",
-                hours_cost: 10,
-                days_cost: 2,
-                readiness_change: 15,
-                result:
-                    "Via spacing corrected. Manufacturing readiness +15%."
-            },
-
-            {
-                text: "Request a fabrication engineering review",
-                hours_cost: 4,
-                days_cost: 1,
-                readiness_change: 5,
-                result:
-                    "Fabrication review completed. Readiness +5%."
-            },
-
-            {
-                text: "Accept the risk and release artwork",
-                hours_cost: 0,
-                days_cost: 0,
-                readiness_change: -20,
-                result:
-                    "Artwork released with unresolved via spacing risk. Readiness -20%."
-            }
-        ]
+      choices: [
+    {
+        text: "Rework routing to increase via spacing",
+        hours_cost: 10,
+        days_cost: 2,
+        drc_change: -1,
+        risk_change: -5,
+        result: "Via spacing corrected. DRC violations and manufacturing risk reduced."
+    },
+    {
+        text: "Request fabrication engineering review",
+        hours_cost: 4,
+        days_cost: 1,
+        drc_change: 0,
+        risk_change: -5,
+        result: "Fabrication review completed. Manufacturing risk reduced."
+    },
+    {
+        text: "Accept risk and release artwork",
+        hours_cost: 0,
+        days_cost: 0,
+        drc_change: 0,
+        risk_change: 20,
+        result: "Artwork released with unresolved via spacing risk."
+    }
+]
     }
 ];
 

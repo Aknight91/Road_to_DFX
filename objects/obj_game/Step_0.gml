@@ -28,13 +28,13 @@ if (event_active && !event_resolved)
         {
             // Apply consequences.
             engineering_hours -= _choice.hours_cost;
-            days_remaining -= _choice.days_cost;
+days_remaining -= _choice.days_cost;
 
-            manufacturing_readiness +=
-                _choice.readiness_change;
+drc_violations = max(0, drc_violations + _choice.drc_change);
+manufacturing_risk = max(0, manufacturing_risk + _choice.risk_change);
 
-            manufacturing_readiness =
-                clamp(manufacturing_readiness, 0, 100);
+// Recalculate manufacturing readiness
+calculate_manufacturing_readiness();
 
             event_resolved = true;
 
