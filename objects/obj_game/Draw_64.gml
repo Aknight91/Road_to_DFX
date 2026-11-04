@@ -11,28 +11,61 @@ draw_rectangle(20, 20, 940, 75, false);
 draw_set_color(c_white);
 draw_text(35, 35, "ROAD TO DFX");
 
-// Project status panel
+// --------------------------------------------------
+// PROJECT STATUS PANEL
+// --------------------------------------------------
+
 draw_set_color(c_black);
 draw_text(35, 100, "PROJECT STATUS");
 
-draw_text(35, 135,
-    "Days remaining: " + string(days_remaining));
+draw_text(
+    35, 125,
+    "Days remaining: " + string(days_remaining)
+);
 
-draw_text(35, 165,
-    "Engineering hours: " + string(engineering_hours));
 
-draw_text(35, 195,
-    "Budget: " + string(budget));
+// DFA BAR
+draw_text(35, 160, "DFA - Design for Assembly: " + string(dfa) + "%");
 
-draw_text(35, 225,
-    "Team morale: " + string(morale));
+draw_set_color(make_color_rgb(80, 80, 80));
+draw_rectangle(35, 185, 285, 201, false);
 
-draw_text(35, 255,
-    "DRC violations: " + string(drc_violations));
+draw_set_color(make_color_rgb(0, 128, 0));
+draw_rectangle(35, 185, 35 + (250 * dfa / 100), 201, false);
 
-draw_text(35, 285,
-    "Manufacturing readiness: "
-    + string(manufacturing_readiness) + "%");
+
+// DFM BAR
+draw_set_color(c_black);
+draw_text(35, 220, "DFM - Design for Manufacturing: " + string(dfm) + "%");
+
+draw_set_color(make_color_rgb(80, 80, 80));
+draw_rectangle(35, 245, 285, 261, false);
+
+draw_set_color(make_color_rgb(0, 128, 0));
+draw_rectangle(35, 245, 35 + (250 * dfm / 100), 261, false);
+
+
+// DFT BAR
+draw_set_color(c_black);
+draw_text(35, 280, "DFT - Design for Test: " + string(dft) + "%");
+
+draw_set_color(make_color_rgb(80, 80, 80));
+draw_rectangle(35, 305, 285, 321, false);
+
+draw_set_color(make_color_rgb(0, 128, 0));
+draw_rectangle(35, 305, 35 + (250 * dft / 100), 321, false);
+
+
+// SANITY BAR
+draw_set_color(c_black);
+draw_text(35, 340, "TEAM SANITY: " + string(sanity) + "%");
+
+draw_set_color(make_color_rgb(80, 80, 80));
+draw_rectangle(35, 365, 285, 381, false);
+
+draw_set_color(make_color_rgb(0, 128, 0));
+draw_rectangle(35, 365, 35 + (250 * sanity / 100), 381, false);
+
 
 // --------------------------------------------------
 // EVENT DISPLAY
@@ -41,6 +74,8 @@ draw_text(35, 285,
 if (event_active)
 {
     var _event = design_events[current_event_index];
+
+    draw_set_color(c_black);
 
     draw_text(370, 120, _event.title);
 
@@ -84,9 +119,11 @@ if (event_active)
 
 else if (campaign_complete)
 {
+    draw_set_color(c_black);
+
     draw_text(370, 160, "ROAD TO DFX");
 
-    draw_text(370, 210, "MANUFACTURING RELEASE APPROVED!");
+    draw_text(370, 210, "DFX RELEASE APPROVED!");
 
     draw_text_ext(
         370, 260,
@@ -96,21 +133,10 @@ else if (campaign_complete)
 
     draw_text(370, 350, "FINAL PROJECT STATUS:");
 
-    draw_text(
-        370, 390,
-        "Days remaining: " + string(days_remaining)
-    );
-
-    draw_text(
-        370, 420,
-        "Engineering hours: " + string(engineering_hours)
-    );
-
-    draw_text(
-        370, 450,
-        "Manufacturing readiness: "
-        + string(manufacturing_readiness) + "%"
-    );
+    draw_text(370, 390, "DFA: " + string(dfa) + "%");
+    draw_text(370, 420, "DFM: " + string(dfm) + "%");
+    draw_text(370, 450, "DFT: " + string(dft) + "%");
+    draw_text(370, 480, "Sanity: " + string(sanity) + "%");
 }
 
 // --------------------------------------------------
@@ -119,6 +145,8 @@ else if (campaign_complete)
 
 else if (campaign_failed)
 {
+    draw_set_color(c_black);
+
     draw_text(370, 160, "ROAD TO DFX");
 
     draw_text(370, 210, "PROJECT FAILURE!");
@@ -131,23 +159,12 @@ else if (campaign_failed)
 
     draw_text(370, 350, "FINAL PROJECT STATUS:");
 
-    draw_text(
-        370, 390,
-        "Days remaining: " + string(days_remaining)
-    );
-
-    draw_text(
-        370, 420,
-        "Engineering hours: " + string(engineering_hours)
-    );
-
-    draw_text(
-        370, 450,
-        "Manufacturing readiness: "
-        + string(manufacturing_readiness) + "%"
-    );
+    draw_text(370, 390, "DFA: " + string(dfa) + "%");
+    draw_text(370, 420, "DFM: " + string(dfm) + "%");
+    draw_text(370, 450, "DFT: " + string(dft) + "%");
+    draw_text(370, 480, "Sanity: " + string(sanity) + "%");
 }
 
-// Instructions
-draw_text(35, 475, "PROTOTYPE 0.1");
-draw_text(35, 505, "Next: add your first design event.");
+// Prototype label
+draw_set_color(c_black);
+draw_text(35, 475, "ROAD TO DFX - PROTOTYPE");

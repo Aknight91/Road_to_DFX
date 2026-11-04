@@ -11,6 +11,23 @@ morale = 80;
 drc_violations = 25;
 manufacturing_risk = 10;
 
+
+// Primary DFX Status Bars
+dfa = 50;
+dfm = 50;
+dft = 50;
+sanity = 100;
+
+
+// Sanity Crisis System
+sanity_zero_active = false;
+sanity_zero_turns_remaining = 3;
+sanity_zero_failure_pending = false;
+
+
+// Software instability multiplier
+software_instability = 1;
+
 // Calculate manufacturing readiness
 calculate_manufacturing_readiness = function()
 {
@@ -40,7 +57,11 @@ design_events = [
         days_cost: 0,
         drc_change: 0,
         risk_change: 0,
-        result: "Rework selected. 12 hours spent."
+        dfa_change: 0,
+        dfm_change: 10,
+        dft_change: 0,
+		sanity_change: -100,
+        result: "Rework selected. Routing corrected. DFM improved."
     },
     {
         text: "Apply a quick patch",
@@ -48,6 +69,10 @@ design_events = [
         days_cost: 0,
         drc_change: 0,
         risk_change: 10,
+        dfa_change: 0,
+        dfm_change: -10,
+        dft_change: 0,
+		sanity_change: -100,
         result: "Quick patch applied. Manufacturing risk increased."
     },
     {
@@ -56,7 +81,11 @@ design_events = [
         days_cost: 1,
         drc_change: 0,
         risk_change: -5,
-        result: "Design review completed. Manufacturing risk reduced."
+        dfa_change: 0,
+        dfm_change: 5,
+        dft_change: 0,
+		sanity_change: -100,
+        result: "Design review completed. Routing concerns reduced."
     }
 ]
 		
@@ -71,14 +100,18 @@ design_events = [
             + "that are too close together. The manufacturer "
             + "has flagged the design. How will you respond?",
 
-      choices: [
+     choices: [
     {
         text: "Rework routing to increase via spacing",
         hours_cost: 10,
         days_cost: 2,
         drc_change: -1,
         risk_change: -5,
-        result: "Via spacing corrected. DRC violations and manufacturing risk reduced."
+        dfa_change: 0,
+        dfm_change: 10,
+        dft_change: 0,
+		sanity_change: -8,
+        result: "Via spacing corrected. DFM improved."
     },
     {
         text: "Request fabrication engineering review",
@@ -86,7 +119,11 @@ design_events = [
         days_cost: 1,
         drc_change: 0,
         risk_change: -5,
-        result: "Fabrication review completed. Manufacturing risk reduced."
+        dfa_change: 0,
+        dfm_change: 5,
+        dft_change: 0,
+		sanity_change: -4,
+        result: "Fabrication review completed. DFM improved."
     },
     {
         text: "Accept risk and release artwork",
@@ -94,6 +131,10 @@ design_events = [
         days_cost: 0,
         drc_change: 0,
         risk_change: 20,
+        dfa_change: 0,
+        dfm_change: -15,
+        dft_change: 0,
+		sanity_change: -12,
         result: "Artwork released with unresolved via spacing risk."
     }
 ]
