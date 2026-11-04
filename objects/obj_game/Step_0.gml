@@ -1,4 +1,14 @@
+
 /// @description Decisions, progression, and campaign outcomes
+
+
+// Toggle Debug Panel with CTRL + D
+if (keyboard_check_pressed(ord("D"))
+&& keyboard_check(vk_control))
+{
+    debug_panel_open = !debug_panel_open;
+}
+
 
 // --------------------------------------------------
 // PART 1: PROCESS PLAYER DECISIONS
@@ -10,10 +20,8 @@ if (event_active && !event_resolved)
 
     if (keyboard_check_pressed(ord("1")))
         _choice_index = 0;
-
     else if (keyboard_check_pressed(ord("2")))
         _choice_index = 1;
-
     else if (keyboard_check_pressed(ord("3")))
         _choice_index = 2;
 
@@ -32,20 +40,32 @@ if (event_active && !event_resolved)
             engineering_hours -= _choice.hours_cost;
             days_remaining -= _choice.days_cost;
 
+            // Record manufacturing penalty before changes
+            var _old_manufacturing_penalty =
+                (drc_violations * 2) + manufacturing_risk;
+
             // Apply DRC and manufacturing risk changes
             drc_violations = max(0, drc_violations + _choice.drc_change);
             manufacturing_risk = max(0, manufacturing_risk + _choice.risk_change);
 
+            // Calculate manufacturing penalty after changes
+            var _new_manufacturing_penalty =
+                (drc_violations * 2) + manufacturing_risk;
+
             // Apply DFX changes
             dfa = clamp(dfa + _choice.dfa_change, 0, 100);
-            dfm = clamp(dfm + _choice.dfm_change, 0, 100);
+
+            dfm = clamp(
+                dfm + _choice.dfm_change
+                + (_old_manufacturing_penalty - _new_manufacturing_penalty),
+                0,
+                100
+            );
+
             dft = clamp(dft + _choice.dft_change, 0, 100);
 
             // Apply sanity change
             sanity = clamp(sanity + _choice.sanity_change, 0, 100);
-
-            // Recalculate manufacturing readiness
-            calculate_manufacturing_readiness();
 
             // Start the sanity crisis
             if (sanity <= 0 && !sanity_zero_active)
@@ -57,7 +77,8 @@ if (event_active && !event_resolved)
                 software_instability = 5;
             }
             // Count subsequent decisions during the crisis
-            else if (_crisis_was_active)
+            else if (_crisis_was_active
+            && sanity_zero_turns_remaining > 0)
             {
                 sanity_zero_turns_remaining -= 1;
 
@@ -72,7 +93,7 @@ if (event_active && !event_resolved)
             game_message = "Decision applied.";
             result_message = _choice.result;
 
-            // Check immediate project failures
+            // Immediate resource and schedule failures only
             if (engineering_hours <= 0)
             {
                 campaign_failed = true;
@@ -88,25 +109,6 @@ if (event_active && !event_resolved)
 
                 failure_reason =
                     "Project failed: Schedule expired.";
-            }
-            else if (manufacturing_readiness <= 0)
-            {
-                campaign_failed = true;
-                event_active = false;
-
-                failure_reason =
-                    "Project failed: Manufacturing readiness reached 0%.";
-            }
-
-            // Handle special sanity failure
-            if (sanity_zero_failure_pending
-            && current_event_index < array_length(design_events) - 1)
-            {
-                campaign_failed = true;
-                event_active = false;
-
-                failure_reason =
-                    "Special failure: Sanity crisis exceeded recovery window.";
             }
 
             if (campaign_failed)
@@ -132,34 +134,7 @@ if (event_active
 && event_resolved
 && keyboard_check_pressed(vk_enter))
 {
-    if (sanity_zero_failure_pending)
-    {
-        // Final opportunity: allow campaign completion first.
-        if (current_event_index == array_length(design_events) - 1
-        && manufacturing_readiness >= required_readiness)
-        {
-            campaign_complete = true;
-            event_active = false;
-
-            game_message = "MANUFACTURING RELEASE APPROVED!";
-
-            result_message =
-                "Congratulations! Your design met the "
-                + "prototype manufacturing readiness requirement.";
-        }
-        else
-        {
-            campaign_failed = true;
-            event_active = false;
-
-            failure_reason =
-                "Special failure: Sanity crisis exceeded recovery window.";
-
-            game_message = "PROJECT FAILURE!";
-            result_message = failure_reason;
-        }
-    }
-    else if (current_event_index < array_length(design_events) - 1)
+    if (current_event_index < array_length(design_events) - 1)
     {
         current_event_index += 1;
 
@@ -170,27 +145,53 @@ if (event_active
     }
     else
     {
+        // --------------------------------------------------
+        // FINAL ROADMAP EVALUATION
+        // --------------------------------------------------
+
         event_active = false;
 
-        if (manufacturing_readiness >= required_readiness)
+        failure_reason = "";
+
+        if (dfa < required_dfa)
+        {
+            failure_reason +=
+                "ASSEMBLY FAILURE: DFA below release requirement.\n";
+        }
+
+        if (dfm < required_dfm)
+        {
+            failure_reason +=
+                "MANUFACTURING FAILURE: DFM below release requirement.\n";
+        }
+
+        if (dft < required_dft)
+        {
+            failure_reason +=
+                "TEST FAILURE: DFT below release requirement.\n";
+        }
+
+        if (sanity < required_sanity)
+        {
+            failure_reason +=
+                "ENGINEERING BURNOUT: Team sanity below survival requirement.\n";
+        }
+
+        if (failure_reason == "")
         {
             campaign_complete = true;
 
-            game_message = "MANUFACTURING RELEASE APPROVED!";
+            game_message = "DESIGN RELEASE APPROVED!";
 
             result_message =
-                "Congratulations! Your design met the "
-                + "prototype manufacturing readiness requirement.";
+                "Congratulations! All DFX release requirements were met.";
         }
         else
         {
             campaign_failed = true;
 
-            failure_reason =
-                "Project failed: Manufacturing readiness "
-                + "was below the required release threshold.";
-
             game_message = "PROJECT FAILURE!";
+
             result_message = failure_reason;
         }
     }

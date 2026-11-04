@@ -168,3 +168,63 @@ else if (campaign_failed)
 // Prototype label
 draw_set_color(c_black);
 draw_text(35, 475, "ROAD TO DFX - PROTOTYPE");
+
+
+// --------------------------------------------------
+// DEBUG PANEL
+// --------------------------------------------------
+
+if (debug_panel_open)
+{
+    // Panel background
+    draw_set_color(make_color_rgb(25, 25, 35));
+    draw_rectangle(600, 85, 950, 525, false);
+
+    // Panel header
+    draw_set_color(make_color_rgb(0, 0, 128));
+    draw_rectangle(600, 85, 950, 115, false);
+
+    draw_set_color(c_white);
+    draw_text(610, 93, "ROAD TO DFX - DEBUG");
+
+    // PLAYER RESOURCES
+    draw_set_color(c_yellow);
+    draw_text(610, 125, "PLAYER RESOURCES");
+
+    draw_set_color(c_white);
+    draw_text(610, 145, "Days remaining: " + string(days_remaining));
+    draw_text(610, 163, "Engineering hours: " + string(engineering_hours));
+    draw_text(610, 181, "Budget: " + string(budget));
+    draw_text(610, 199, "Morale: " + string(morale));
+
+    // DFX STATUS
+    draw_set_color(c_yellow);
+    draw_text(610, 225, "DFX STATUS");
+
+    draw_set_color(c_white);
+    draw_text(610, 245, "DFA: " + string(dfa) + "%");
+    draw_text(610, 263, "DFM: " + string(dfm) + "%");
+    draw_text(610, 281, "DFT: " + string(dft) + "%");
+    draw_text(610, 299, "Sanity: " + string(sanity) + "%");
+    draw_text(610, 317, "DFM: " + string(dfm) + "%");
+
+    // ENGINEERING STATUS
+    draw_set_color(c_yellow);
+    draw_text(610, 343, "ENGINEERING STATUS");
+
+    draw_set_color(c_white);
+    draw_text(610, 363, "DRC violations: " + string(drc_violations));
+    draw_text(610, 381, "Manufacturing risk: " + string(manufacturing_risk));
+    draw_text(610, 399, "Software instability: " + string(software_instability));
+
+    // EVENT AND SANITY CRISIS
+    draw_set_color(c_yellow);
+    draw_text(610, 425, "EVENT / SANITY CRISIS");
+
+    draw_set_color(c_white);
+    draw_text(610, 445, "Current event: " + string(current_event_index + 1));
+    draw_text(610, 463, "Event active: " + string(event_active));
+    draw_text(610, 481, "Event resolved: " + string(event_resolved));
+    draw_text(610, 499, "Crisis active: " + string(sanity_zero_active));
+    draw_text(610, 517, "Turns remaining: " + string(sanity_zero_turns_remaining));
+}

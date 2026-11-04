@@ -29,24 +29,14 @@ sanity_zero_failure_pending = false;
 // Software instability multiplier
 software_instability = 1;
 
+// Debug Panel
+debug_panel_open = false;
 
-// Calculate manufacturing readiness
-calculate_manufacturing_readiness = function()
-{
-    manufacturing_readiness = clamp(
-        100 - (drc_violations * 2) - manufacturing_risk,
-        0,
-        100
-    );
-};
-
-
-// Set initial manufacturing readiness
-calculate_manufacturing_readiness();
 
 
 // Store reusable design events.
 design_events = [
+
     {
         title: "INCOMING DESIGN CHANGE!",
 
@@ -253,7 +243,10 @@ event_resolved = false;
 campaign_complete = false;
 campaign_failed = false;
 
-required_readiness = 50;
+required_dfa = 50;
+required_dfm = 50;
+required_dft = 50;
+required_sanity = 1;
 failure_reason = "";
 
 game_message = "Choose your response below.";
