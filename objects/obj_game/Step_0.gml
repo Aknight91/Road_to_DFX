@@ -40,6 +40,11 @@ if (event_active && !event_resolved)
             engineering_hours -= _choice.hours_cost;
             days_remaining -= _choice.days_cost;
 
+
+			// Advance project calendar based on engineering effort
+			advance_project_work_hours(_choice.hours_cost);
+
+
             // Record manufacturing penalty before changes
             var _old_manufacturing_penalty =
                 (drc_violations * 2) + manufacturing_risk;
@@ -76,22 +81,43 @@ if (event_active && !event_resolved)
                 // Software instability increases dramatically
                 software_instability = 5;
             }
-            // Count subsequent decisions during the crisis
-            else if (_crisis_was_active
-            && sanity_zero_turns_remaining > 0)
-            {
-                sanity_zero_turns_remaining -= 1;
+           			
 
-                if (sanity_zero_turns_remaining <= 0)
-                {
-                    sanity_zero_failure_pending = true;
-                }
-            }
+			
+			 // Count subsequent decisions during the crisis
+			 else if (_crisis_was_active
+			 && sanity_zero_turns_remaining > 0)
+			 {
+			     sanity_zero_turns_remaining -= 1;
+
+			     // Check whether the three-turn deadline expired
+			     if (sanity_zero_turns_remaining <= 0)
+			     {
+			         sanity_zero_turns_remaining = 0;
+			         sanity_zero_failure_pending = true;
+
+			         // Fail if the final roadmap event is not reached
+			         if (current_event_index < array_length(design_events) - 1)
+			         {
+			             campaign_failed = true;
+			             event_active = false;
+
+			             failure_reason =
+			                 "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
+			         }
+			     }
+			 }
+
+
 
             event_resolved = true;
 
-            game_message = "Decision applied.";
-            result_message = _choice.result;
+           
+			
+			game_message = "Decision applied.";
+			result_message = _choice.result;
+
+
 
             // Immediate resource and schedule failures only
             if (engineering_hours <= 0)
@@ -111,6 +137,7 @@ if (event_active && !event_resolved)
                     "Project failed: Schedule expired.";
             }
 
+			
             if (campaign_failed)
             {
                 game_message = "PROJECT FAILURE!";
@@ -196,3 +223,27 @@ if (event_active
         }
     }
 }
+
+
+
+
+ // --------------------------------------------------
+ // TEMPORARY TEST: VIEW PROJECT CALENDAR
+ // Press T to inspect calendar values
+ // --------------------------------------------------
+
+ if (keyboard_check_pressed(ord("T")))
+ {
+     show_message(
+         "Current date: "
+         + format_project_date(project_current_date)
+         + "\nProject deadline: "
+         + format_project_date(project_deadline_date)
+         + "\nTotal hours elapsed: "
+         + string(project_work_hours_elapsed)
+         + "\nHours accumulated today: "
+         + string(project_work_hours_today)
+     );
+ }
+
+

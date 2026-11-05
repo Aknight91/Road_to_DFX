@@ -54,7 +54,7 @@ design_events = [
                 dfa_change: 0,
                 dfm_change: 10,
                 dft_change: 0,
-                sanity_change: -100,
+                sanity_change: -8,
                 result: "Rework selected. Routing corrected. DFM improved."
             },
             {
@@ -66,7 +66,7 @@ design_events = [
                 dfa_change: 0,
                 dfm_change: -10,
                 dft_change: 0,
-                sanity_change: -100,
+                sanity_change: -6,
                 result: "Quick patch applied. Manufacturing risk increased."
             },
             {
@@ -78,7 +78,7 @@ design_events = [
                 dfa_change: 0,
                 dfm_change: 5,
                 dft_change: 0,
-                sanity_change: -100,
+                sanity_change: -4,
                 result: "Design review completed. Routing concerns reduced."
             }
         ]
@@ -251,3 +251,79 @@ failure_reason = "";
 
 game_message = "Choose your response below.";
 result_message = "";
+
+
+ // --------------------------------------------------
+ // PROJECT CALENDAR SYSTEM
+ // --------------------------------------------------
+
+ // Temporary dates for mechanics testing
+ project_start_date = date_create_datetime(2027, 1, 4, 0, 0, 0);
+ project_current_date = project_start_date;
+ project_deadline_date = date_create_datetime(2027, 2, 8, 0, 0, 0);
+
+ // Standard engineering workday
+ hours_per_workday = 8;
+
+ // Track engineering time consumed
+ project_work_hours_elapsed = 0;
+ project_work_hours_today = 0;
+
+
+
+ // --------------------------------------------------
+ // ADVANCE PROJECT TIME USING ENGINEERING HOURS
+ // --------------------------------------------------
+
+ advance_project_work_hours = function(_hours)
+ {
+     // Record engineering hours consumed
+     project_work_hours_elapsed += _hours;
+     project_work_hours_today += _hours;
+
+     // Advance one workday for every 8 hours accumulated
+     while (project_work_hours_today >= hours_per_workday)
+     {
+         project_work_hours_today -= hours_per_workday;
+
+         // Move to the next calendar day
+         project_current_date = date_inc_day(
+             project_current_date, 1
+         );
+
+         // Skip Saturday and Sunday
+         while (date_get_weekday(project_current_date) == 0
+         || date_get_weekday(project_current_date) == 6)
+         {
+             project_current_date = date_inc_day(
+                 project_current_date, 1
+             );
+         }
+     }
+ };
+
+
+
+ // --------------------------------------------------
+ // FORMAT PROJECT DATES AS MM/DD/YYYY
+ // --------------------------------------------------
+
+ format_project_date = function(_date)
+ {
+     var _month = string(date_get_month(_date));
+     var _day = string(date_get_day(_date));
+     var _year = string(date_get_year(_date));
+
+     // Add leading zeros when necessary
+     if (string_length(_month) < 2)
+     {
+         _month = "0" + _month;
+     }
+
+     if (string_length(_day) < 2)
+     {
+         _day = "0" + _day;
+     }
+
+     return _month + "/" + _day + "/" + _year;
+ };
