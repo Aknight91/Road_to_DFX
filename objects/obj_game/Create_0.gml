@@ -242,6 +242,8 @@ event_resolved = false;
 
 campaign_complete = false;
 campaign_failed = false;
+campaign_half_victory = false;
+
 
 required_dfa = 50;
 required_dfm = 50;

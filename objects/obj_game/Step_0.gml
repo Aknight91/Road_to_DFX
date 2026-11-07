@@ -203,33 +203,43 @@ if (event_active
                 "TEST FAILURE: DFT below release requirement.\n";
         }
 
-        if (sanity < required_sanity)
-        {
-            failure_reason +=
-                "ENGINEERING BURNOUT: Team sanity below survival requirement.\n";
-        }
+        
+       
+		if (failure_reason == "")
+		{
+		    campaign_complete = true;
 
-        if (failure_reason == "")
-        {
-            campaign_complete = true;
+		    // Check for the special half-victory condition
+		    if (get_overdue_workdays() > 0 && sanity <= 0)
+		    {
+		        campaign_half_victory = true;
 
-            game_message = "DESIGN RELEASE APPROVED!";
+		        game_message = "DESIGN RELEASED - HALF VICTORY!";
 
-            result_message =
-                "Congratulations! All DFX release requirements were met.";
-        }
-        else
-        {
-            campaign_failed = true;
+		        result_message =
+		            "The design met all DFX release requirements. "
+		            + "However, the project was delivered late "
+		            + "and the engineer was terminated.";
+		    }
+		    else
+		    {
+		        game_message = "DESIGN RELEASE APPROVED!";
 
-            game_message = "PROJECT FAILURE!";
+		        result_message =
+		            "Congratulations! All DFX release requirements were met.";
+		    }
+		}
+		else
+		{
+		    campaign_failed = true;
 
-            result_message = failure_reason;
-        }
-    }
-}
+		    game_message = "PROJECT FAILURE!";
 
+		    result_message = failure_reason;
+		}
 
+		    }
+		}
 
 
  
