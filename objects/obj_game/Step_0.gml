@@ -30,19 +30,27 @@ if (event_active && !event_resolved)
         var _event = design_events[current_event_index];
         var _choice = _event.choices[_choice_index];
 
-        if (engineering_hours >= _choice.hours_cost
-        && days_remaining >= _choice.days_cost)
+       
+		if (engineering_hours >= _choice.hours_cost)
+
         {
             // Was the sanity crisis already active?
             var _crisis_was_active = sanity_zero_active;
 
-            // Apply resource costs
-            engineering_hours -= _choice.hours_cost;
-            days_remaining -= _choice.days_cost;
+           
+		    // Apply engineering resource costs
+		    engineering_hours -= _choice.hours_cost;
+
+		    // Advance calendar based on engineering effort
+		    advance_project_work_hours(_choice.hours_cost);
+
+		    // Advance calendar for additional schedule delays
+		    advance_project_schedule_days(_choice.days_cost);
+
+		    // Update remaining workdays from the project calendar
+		    days_remaining = get_workdays_until_deadline();
 
 
-			// Advance project calendar based on engineering effort
-			advance_project_work_hours(_choice.hours_cost);
 
 
             // Record manufacturing penalty before changes
@@ -69,11 +77,16 @@ if (event_active && !event_resolved)
 
             dft = clamp(dft + _choice.dft_change, 0, 100);
 
-            // Apply sanity change
-            sanity = clamp(sanity + _choice.sanity_change, 0, 100);
+           
+		    // Apply sanity change from the player's decision
+		    sanity = clamp(sanity + _choice.sanity_change, 0, 100);
 
-            // Start the sanity crisis
-            if (sanity <= 0 && !sanity_zero_active)
+		    // Apply any newly incurred overdue workday penalties
+		    apply_overdue_sanity_penalty();
+
+		    // Start the sanity crisis
+		    if (sanity <= 0 && !sanity_zero_active)
+
             {
                 sanity_zero_active = true;
                 sanity_zero_turns_remaining = 3;
@@ -128,15 +141,7 @@ if (event_active && !event_resolved)
                 failure_reason =
                     "Project failed: Engineering hours exhausted.";
             }
-            else if (days_remaining <= 0)
-            {
-                campaign_failed = true;
-                event_active = false;
-
-                failure_reason =
-                    "Project failed: Schedule expired.";
-            }
-
+           
 			
             if (campaign_failed)
             {
@@ -227,9 +232,9 @@ if (event_active
 
 
 
+ 
  // --------------------------------------------------
- // TEMPORARY TEST: VIEW PROJECT CALENDAR
- // Press T to inspect calendar values
+ // TEMPORARY TEST: PROJECT CALENDAR INSPECTOR
  // --------------------------------------------------
 
  if (keyboard_check_pressed(ord("T")))
@@ -239,11 +244,45 @@ if (event_active
          + format_project_date(project_current_date)
          + "\nProject deadline: "
          + format_project_date(project_deadline_date)
-         + "\nTotal hours elapsed: "
+         + "\nWorkdays until deadline: "
+         + string(get_workdays_until_deadline())
+         + "\nLegacy days remaining: "
+         + string(days_remaining)
+         + "\nEngineering hours elapsed: "
          + string(project_work_hours_elapsed)
          + "\nHours accumulated today: "
          + string(project_work_hours_today)
+         + "\nAdditional schedule delays: "
+         + string(project_schedule_delay_days)		 
+		 + "\nOverdue workdays: "
+		 + string(get_overdue_workdays())
+
      );
  }
 
 
+
+
+/* // --------------------------------------------------
+ // TEMPORARY TEST: SCHEDULE DELAYS
+ // Press Y to simulate a 2-day schedule delay
+ // --------------------------------------------------
+
+ if (keyboard_check_pressed(ord("Y")))
+ {
+     advance_project_schedule_days(2);
+
+     show_message(
+         "Current date: "
+         + format_project_date(project_current_date)
+         + "\nProject deadline: "
+         + format_project_date(project_deadline_date)
+         + "\nTotal engineering hours elapsed: "
+         + string(project_work_hours_elapsed)
+         + "\nHours accumulated today: "
+         + string(project_work_hours_today)
+		 + "\nAdditional schedule delays: "
+		 + string(project_schedule_delay_days)
+     );
+ }
+*/
