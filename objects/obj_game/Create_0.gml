@@ -178,10 +178,9 @@ design_events = [
                 sanity_change: -8,
                 result: "Test coverage accepted with unresolved risk."
             }
-        ]
-	}
+                ]
+    },
 
-    ,
     {
         // FINAL TEST SIGNOFF EVENT
         title: "FINAL TEST SIGNOFF!",
@@ -262,9 +261,8 @@ result_message = "";
  // Project dates
  project_start_date = date_create_datetime(2027, 1, 4, 0, 0, 0);
  project_current_date = project_start_date;
- //REALproject_deadline_date = date_create_datetime(2027, 2, 8, 0, 0, 0);
- // TEMPORARY TEST DEADLINE
- project_deadline_date = date_create_datetime(2027, 1, 4, 0, 0, 0);
+ project_deadline_date = date_create_datetime(2027, 2, 8, 0, 0, 0);
+
 
  // Standard engineering workday
  hours_per_workday = 8;
@@ -279,10 +277,10 @@ result_message = "";
  // OVERDUE SANITY PENALTY SYSTEM
  // --------------------------------------------------
 
+
  // Sanity lost per overdue working day
- //REALoverdue_sanity_penalty_per_day = 20;
- // TEMPORARY TEST: Force Sanity Crisis from overdue penalty
- overdue_sanity_penalty_per_day = 100;
+ overdue_sanity_penalty_per_day = 20;
+
 
 
  // Number of overdue workdays already penalized
@@ -461,45 +459,3 @@ result_message = "";
          overdue_days_penalized = _overdue_days;
      }
  };
-
-
-/*
- // --------------------------------------------------
- // TEMPORARY TEST: OVERDUE SANITY PENALTIES
- // --------------------------------------------------
-
- // Begin on the project deadline
- project_current_date = project_deadline_date;
-
- // Advance one working day past the deadline
- advance_project_schedule_days(1);
- apply_overdue_sanity_penalty();
-
- var _sanity_after_first = sanity;
-
- // Apply again without advancing the date
- apply_overdue_sanity_penalty();
-
- var _sanity_after_repeat = sanity;
-
- // Advance another working day
- advance_project_schedule_days(1);
- apply_overdue_sanity_penalty();
-
- // Display test results
- show_message(
-     "First overdue day sanity: "
-     + string(_sanity_after_first)
-     + "\nRepeated penalty sanity: "
-     + string(_sanity_after_repeat)
-     + "\nSecond overdue day sanity: "
-     + string(sanity)
-     + "\nOverdue workdays: "
-     + string(get_overdue_workdays())
-     + "\nDays already penalized: "
-     + string(overdue_days_penalized)
-     + "\nCurrent date: "
-     + format_project_date(project_current_date)
- );
- 
- */

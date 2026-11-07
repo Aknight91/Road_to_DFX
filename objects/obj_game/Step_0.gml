@@ -31,24 +31,24 @@ if (event_active && !event_resolved)
         var _choice = _event.choices[_choice_index];
 
        
-		if (engineering_hours >= _choice.hours_cost)
+		
+if (engineering_hours >= _choice.hours_cost)
+{
+    // Was the sanity crisis already active?
+    var _crisis_was_active = sanity_zero_active;
 
-        {
-            // Was the sanity crisis already active?
-            var _crisis_was_active = sanity_zero_active;
+    // Apply engineering resource costs
+    engineering_hours -= _choice.hours_cost;
 
-           
-		    // Apply engineering resource costs
-		    engineering_hours -= _choice.hours_cost;
+    // Advance calendar based on engineering effort
+    advance_project_work_hours(_choice.hours_cost);
 
-		    // Advance calendar based on engineering effort
-		    advance_project_work_hours(_choice.hours_cost);
+    // Advance calendar for additional schedule delays
+    advance_project_schedule_days(_choice.days_cost);
 
-		    // Advance calendar for additional schedule delays
-		    advance_project_schedule_days(_choice.days_cost);
+    // Update remaining workdays from the project calendar
+    days_remaining = get_workdays_until_deadline();
 
-		    // Update remaining workdays from the project calendar
-		    days_remaining = get_workdays_until_deadline();
 
 
 
@@ -78,15 +78,15 @@ if (event_active && !event_resolved)
             dft = clamp(dft + _choice.dft_change, 0, 100);
 
            
-		    // Apply sanity change from the player's decision
-		    sanity = clamp(sanity + _choice.sanity_change, 0, 100);
+		    
+            // Apply sanity change from the player's decision
+            sanity = clamp(sanity + _choice.sanity_change, 0, 100);
 
-		    // Apply any newly incurred overdue workday penalties
-		    apply_overdue_sanity_penalty();
+            // Apply any newly incurred overdue workday penalties
+            apply_overdue_sanity_penalty();
 
-		    // Start the sanity crisis
-		    if (sanity <= 0 && !sanity_zero_active)
-
+            // Start the sanity crisis
+            if (sanity <= 0 && !sanity_zero_active)
             {
                 sanity_zero_active = true;
                 sanity_zero_turns_remaining = 3;
@@ -94,32 +94,30 @@ if (event_active && !event_resolved)
                 // Software instability increases dramatically
                 software_instability = 5;
             }
-           			
+            // Count subsequent decisions during the crisis
+            else if (_crisis_was_active
+            && sanity_zero_turns_remaining > 0)
+            {
+                sanity_zero_turns_remaining -= 1;
 
-			
-			 // Count subsequent decisions during the crisis
-			 else if (_crisis_was_active
-			 && sanity_zero_turns_remaining > 0)
-			 {
-			     sanity_zero_turns_remaining -= 1;
+                // Check whether the three-turn deadline expired
+                if (sanity_zero_turns_remaining <= 0)
+                {
+                    sanity_zero_turns_remaining = 0;
+                    sanity_zero_failure_pending = true;
 
-			     // Check whether the three-turn deadline expired
-			     if (sanity_zero_turns_remaining <= 0)
-			     {
-			         sanity_zero_turns_remaining = 0;
-			         sanity_zero_failure_pending = true;
+                    // Fail if the final roadmap event is not reached
+                    if (current_event_index < array_length(design_events) - 1)
+                    {
+                        campaign_failed = true;
+                        event_active = false;
 
-			         // Fail if the final roadmap event is not reached
-			         if (current_event_index < array_length(design_events) - 1)
-			         {
-			             campaign_failed = true;
-			             event_active = false;
+                        failure_reason =
+                            "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
+                    }
+                }
+            }
 
-			             failure_reason =
-			                 "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
-			         }
-			     }
-			 }
 
 
 
@@ -132,7 +130,7 @@ if (event_active && !event_resolved)
 
 
 
-            // Immediate resource and schedule failures only
+            // Immediate engineering resource exhaustion check
             if (engineering_hours <= 0)
             {
                 campaign_failed = true;
@@ -205,44 +203,46 @@ if (event_active
 
         
        
-		if (failure_reason == "")
-		{
-		    campaign_complete = true;
+		
+        if (failure_reason == "")
+        {
+            campaign_complete = true;
 
-		    // Check for the special half-victory condition
-		    if (get_overdue_workdays() > 0 && sanity <= 0)
-		    {
-		        campaign_half_victory = true;
+            // Check for the special half-victory condition
+            if (get_overdue_workdays() > 0 && sanity <= 0)
+            {
+                campaign_half_victory = true;
 
-		        game_message = "DESIGN RELEASED - HALF VICTORY!";
+                game_message = "DESIGN RELEASED - HALF VICTORY!";
 
-		        result_message =
-		            "The design met all DFX release requirements. "
-		            + "However, the project was delivered late "
-		            + "and the engineer was terminated.";
-		    }
-		    else
-		    {
-		        game_message = "DESIGN RELEASE APPROVED!";
+                result_message =
+                    "The design met all DFX release requirements. "
+                    + "However, the project was delivered late "
+                    + "and the engineer was terminated.";
+            }
+            else
+            {
+                game_message = "DESIGN RELEASE APPROVED!";
 
-		        result_message =
-		            "Congratulations! All DFX release requirements were met.";
-		    }
-		}
-		else
-		{
-		    campaign_failed = true;
+                result_message =
+                    "Congratulations! All DFX release requirements were met.";
+            }
+        }
+        else
+        {
+            campaign_failed = true;
 
-		    game_message = "PROJECT FAILURE!";
+            game_message = "PROJECT FAILURE!";
 
-		    result_message = failure_reason;
-		}
-
-		    }
-		}
+            result_message = failure_reason;
+        }
 
 
- 
+	}
+}
+
+
+/* 
  // --------------------------------------------------
  // TEMPORARY TEST: PROJECT CALENDAR INSPECTOR
  // --------------------------------------------------
@@ -270,29 +270,4 @@ if (event_active
      );
  }
 
-
-
-
-/* // --------------------------------------------------
- // TEMPORARY TEST: SCHEDULE DELAYS
- // Press Y to simulate a 2-day schedule delay
- // --------------------------------------------------
-
- if (keyboard_check_pressed(ord("Y")))
- {
-     advance_project_schedule_days(2);
-
-     show_message(
-         "Current date: "
-         + format_project_date(project_current_date)
-         + "\nProject deadline: "
-         + format_project_date(project_deadline_date)
-         + "\nTotal engineering hours elapsed: "
-         + string(project_work_hours_elapsed)
-         + "\nHours accumulated today: "
-         + string(project_work_hours_today)
-		 + "\nAdditional schedule delays: "
-		 + string(project_schedule_delay_days)
-     );
- }
 */

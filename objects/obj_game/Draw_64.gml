@@ -18,10 +18,21 @@ draw_text(35, 35, "ROAD TO DFX");
 draw_set_color(c_black);
 draw_text(35, 100, "PROJECT STATUS");
 
-draw_text(
-    35, 125,
-    "Days remaining: " + string(days_remaining)
-);
+if (get_overdue_workdays() > 0)
+{
+    draw_text(
+        35, 125,
+        "Workdays overdue: " + string(get_overdue_workdays())
+    );
+}
+else
+{
+    draw_text(
+        35, 125,
+        "Workdays remaining: " + string(days_remaining)
+    );
+}
+
 
 
 // DFA BAR
@@ -102,15 +113,22 @@ if (event_active)
     {
         draw_text(370, 265, "EVENT RESOLVED");
 
-        draw_text(370, 450, "Press ENTER to continue.");
+        draw_text(370, 500, "Press ENTER to continue.");
+
     }
 
     draw_text(370, 385, game_message);
 
-    if (result_message != "")
-    {
-        draw_text(370, 405, result_message);
-    }
+    
+	if (result_message != "")
+	{
+	    draw_text_ext(
+	        370, 405,
+	        result_message,
+	        -1, 520
+	    );
+	}
+
 }
 
 // --------------------------------------------------
@@ -123,7 +141,7 @@ else if (campaign_complete)
 
     draw_text(370, 160, "ROAD TO DFX");
 
-    draw_text(370, 210, "DFX RELEASE APPROVED!");
+    draw_text(370, 210, game_message);
 
     draw_text_ext(
         370, 260,
@@ -205,26 +223,26 @@ if (debug_panel_open)
     draw_text(610, 245, "DFA: " + string(dfa) + "%");
     draw_text(610, 263, "DFM: " + string(dfm) + "%");
     draw_text(610, 281, "DFT: " + string(dft) + "%");
-    draw_text(610, 299, "Sanity: " + string(sanity) + "%");
-    draw_text(610, 317, "DFM: " + string(dfm) + "%");
 
+   
     // ENGINEERING STATUS
     draw_set_color(c_yellow);
-    draw_text(610, 343, "ENGINEERING STATUS");
+    draw_text(610, 327, "ENGINEERING STATUS");
 
     draw_set_color(c_white);
-    draw_text(610, 363, "DRC violations: " + string(drc_violations));
-    draw_text(610, 381, "Manufacturing risk: " + string(manufacturing_risk));
-    draw_text(610, 399, "Software instability: " + string(software_instability));
+    draw_text(610, 347, "DRC violations: " + string(drc_violations));
+    draw_text(610, 365, "Manufacturing risk: " + string(manufacturing_risk));
+    draw_text(610, 383, "Software instability: " + string(software_instability));
 
     // EVENT AND SANITY CRISIS
     draw_set_color(c_yellow);
-    draw_text(610, 425, "EVENT / SANITY CRISIS");
+    draw_text(610, 409, "EVENT / SANITY CRISIS");
 
     draw_set_color(c_white);
-    draw_text(610, 445, "Current event: " + string(current_event_index + 1));
-    draw_text(610, 463, "Event active: " + string(event_active));
-    draw_text(610, 481, "Event resolved: " + string(event_resolved));
-    draw_text(610, 499, "Crisis active: " + string(sanity_zero_active));
-    draw_text(610, 517, "Turns remaining: " + string(sanity_zero_turns_remaining));
+    draw_text(610, 429, "Current event: " + string(current_event_index + 1));
+    draw_text(610, 447, "Event active: " + string(event_active));
+    draw_text(610, 465, "Event resolved: " + string(event_resolved));
+    draw_text(610, 483, "Crisis active: " + string(sanity_zero_active));
+    draw_text(610, 501, "Turns remaining: " + string(sanity_zero_turns_remaining));
+
 }
