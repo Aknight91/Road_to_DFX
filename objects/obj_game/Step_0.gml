@@ -11,7 +11,7 @@ if (keyboard_check_pressed(ord("D"))
 
 
 // --------------------------------------------------
-// PART 1: PROCESS PLAYER DECISIONS
+// PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
 // --------------------------------------------------
 
 if (event_active && !event_resolved)
@@ -25,134 +25,16 @@ if (event_active && !event_resolved)
     else if (keyboard_check_pressed(ord("3")))
         _choice_index = 2;
 
+ // --------------------------------------------------
+ // PROCESS PLAYER DECISIONS (MOUSE)
+ // --------------------------------------------------
+
+   
     if (_choice_index != -1)
     {
-        var _event = design_events[current_event_index];
-        var _choice = _event.choices[_choice_index];
-
-       
-		
-if (engineering_hours >= _choice.hours_cost)
-{
-    // Was the sanity crisis already active?
-    var _crisis_was_active = sanity_zero_active;
-
-    // Apply engineering resource costs
-    engineering_hours -= _choice.hours_cost;
-
-    // Advance calendar based on engineering effort
-    advance_project_work_hours(_choice.hours_cost);
-
-    // Advance calendar for additional schedule delays
-    advance_project_schedule_days(_choice.days_cost);
-
-    // Update remaining workdays from the project calendar
-    days_remaining = get_workdays_until_deadline();
-
-
-
-
-
-            // Record manufacturing penalty before changes
-            var _old_manufacturing_penalty =
-                (drc_violations * 2) + manufacturing_risk;
-
-            // Apply DRC and manufacturing risk changes
-            drc_violations = max(0, drc_violations + _choice.drc_change);
-            manufacturing_risk = max(0, manufacturing_risk + _choice.risk_change);
-
-            // Calculate manufacturing penalty after changes
-            var _new_manufacturing_penalty =
-                (drc_violations * 2) + manufacturing_risk;
-
-            // Apply DFX changes
-            dfa = clamp(dfa + _choice.dfa_change, 0, 100);
-
-            dfm = clamp(
-                dfm + _choice.dfm_change
-                + (_old_manufacturing_penalty - _new_manufacturing_penalty),
-                0,
-                100
-            );
-
-            dft = clamp(dft + _choice.dft_change, 0, 100);
-
-           
-		    
-            // Apply sanity change from the player's decision
-            sanity = clamp(sanity + _choice.sanity_change, 0, 100);
-
-            // Apply any newly incurred overdue workday penalties
-            apply_overdue_sanity_penalty();
-
-            // Start the sanity crisis
-            if (sanity <= 0 && !sanity_zero_active)
-            {
-                sanity_zero_active = true;
-                sanity_zero_turns_remaining = 3;
-
-                // Software instability increases dramatically
-                software_instability = 5;
-            }
-            // Count subsequent decisions during the crisis
-            else if (_crisis_was_active
-            && sanity_zero_turns_remaining > 0)
-            {
-                sanity_zero_turns_remaining -= 1;
-
-                // Check whether the three-turn deadline expired
-                if (sanity_zero_turns_remaining <= 0)
-                {
-                    sanity_zero_turns_remaining = 0;
-                    sanity_zero_failure_pending = true;
-
-                    // Fail if the final roadmap event is not reached
-                    if (current_event_index < array_length(design_events) - 1)
-                    {
-                        campaign_failed = true;
-                        event_active = false;
-
-                        failure_reason =
-                            "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
-                    }
-                }
-            }
-
-
-
-
-            event_resolved = true;
-
-           
-			
-			game_message = "Decision applied.";
-			result_message = _choice.result;
-
-
-
-            // Immediate engineering resource exhaustion check
-            if (engineering_hours <= 0)
-            {
-                campaign_failed = true;
-                event_active = false;
-
-                failure_reason =
-                    "Project failed: Engineering hours exhausted.";
-            }
-           
-			
-            if (campaign_failed)
-            {
-                game_message = "PROJECT FAILURE!";
-                result_message = failure_reason;
-            }
-        }
-        else
-        {
-            game_message =
-                "Insufficient resources for this decision.";
-        }
+        apply_player_choice(_choice_index);
     }
+
 }
 
 
@@ -164,15 +46,20 @@ if (event_active
 && event_resolved
 && keyboard_check_pressed(vk_enter))
 {
-    if (current_event_index < array_length(design_events) - 1)
-    {
-        current_event_index += 1;
+   
+	if (current_event_index < array_length(design_events) - 1)
+	{
+	    current_event_index += 1;
 
-        event_resolved = false;
+	    event_resolved = false;
 
-        game_message = "Choose your response below.";
-        result_message = "";
-    }
+	    // Rebuild buttons using the new event's choices
+	    refresh_choice_buttons();
+
+	    game_message = "";
+	    result_message = "";
+	}
+
     else
     {
         // --------------------------------------------------
@@ -241,7 +128,14 @@ if (event_active
 	}
 }
 
+// --------------------------------------------------
+// PART 3: CLEAN UP BUTTONS WHEN GAMEPLAY ENDS
+// --------------------------------------------------
 
+if (!event_active && array_length(choice_button_instances) > 0)
+{
+    clear_choice_buttons();
+}
 /* 
  // --------------------------------------------------
  // TEMPORARY TEST: PROJECT CALENDAR INSPECTOR

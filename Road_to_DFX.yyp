@@ -19,8 +19,12 @@
   },
   "name":"Road_to_DFX",
   "resources":[
+    {"id":{"name":"obj_choice_button","path":"objects/obj_choice_button/obj_choice_button.yy",},},
     {"id":{"name":"obj_game","path":"objects/obj_game/obj_game.yy",},},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
+    {"id":{"name":"scr_choice_layout_flex","path":"scripts/scr_choice_layout_flex/scr_choice_layout_flex.yy",},},
+    {"id":{"name":"scr_choice_layout","path":"scripts/scr_choice_layout/scr_choice_layout.yy",},},
+    {"id":{"name":"scr_ui_regions","path":"scripts/scr_ui_regions/scr_ui_regions.yy",},},
   ],
   "resourceType":"GMProject",
   "resourceVersion":"2.0",

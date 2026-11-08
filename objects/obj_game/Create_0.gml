@@ -2,6 +2,9 @@
 // Set the game window to a landscape size
 window_set_size(960, 540);
 
+// Set the reference resolution for GUI elements
+display_set_gui_size(960, 540);
+
 
 // Player Resources
 days_remaining = 25;
@@ -51,7 +54,7 @@ design_events = [
                 days_cost: 0,
                 drc_change: 0,
                 risk_change: 0,
-                dfa_change: 0,
+                dfa_change: 10,
                 dfm_change: 10,
                 dft_change: 0,
                 sanity_change: -8,
@@ -250,7 +253,7 @@ required_dft = 50;
 required_sanity = 1;
 failure_reason = "";
 
-game_message = "Choose your response below.";
+game_message = "";
 result_message = "";
 
 
@@ -459,3 +462,212 @@ result_message = "";
          overdue_days_penalized = _overdue_days;
      }
  };
+
+
+
+ // --------------------------------------------------
+ // APPLY PLAYER CHOICE
+ // --------------------------------------------------
+
+
+apply_player_choice = function(_choice_index)
+{
+    // Reject decisions when gameplay is inactive
+    // or the current event has already been resolved.
+    if (!event_active || event_resolved)
+    {
+        exit;
+    }
+
+    var _event = design_events[current_event_index];
+    var _choice = _event.choices[_choice_index];
+
+    if (engineering_hours >= _choice.hours_cost)
+
+     {
+         // Was the sanity crisis already active?
+         var _crisis_was_active = sanity_zero_active;
+
+         // Apply engineering resource costs
+         engineering_hours -= _choice.hours_cost;
+
+         // Advance calendar based on engineering effort
+         advance_project_work_hours(_choice.hours_cost);
+
+         // Advance calendar for additional schedule delays
+         advance_project_schedule_days(_choice.days_cost);
+
+         // Update remaining workdays
+         days_remaining = get_workdays_until_deadline();
+
+         // Record manufacturing penalty before changes
+         var _old_manufacturing_penalty =
+             (drc_violations * 2) + manufacturing_risk;
+
+         // Apply DRC and manufacturing risk changes
+         drc_violations = max(0, drc_violations + _choice.drc_change);
+         manufacturing_risk = max(0, manufacturing_risk + _choice.risk_change);
+
+         // Calculate manufacturing penalty after changes
+         var _new_manufacturing_penalty =
+             (drc_violations * 2) + manufacturing_risk;
+
+         // Apply DFX changes
+         dfa = clamp(dfa + _choice.dfa_change, 0, 100);
+
+         dfm = clamp(
+             dfm + _choice.dfm_change
+             + (_old_manufacturing_penalty - _new_manufacturing_penalty),
+             0,
+             100
+         );
+
+         dft = clamp(dft + _choice.dft_change, 0, 100);
+
+         // Apply sanity change
+         sanity = clamp(sanity + _choice.sanity_change, 0, 100);
+
+         // Apply overdue Sanity penalties
+         apply_overdue_sanity_penalty();
+
+         // Start the Sanity Crisis
+         if (sanity <= 0 && !sanity_zero_active)
+         {
+             sanity_zero_active = true;
+             sanity_zero_turns_remaining = 3;
+             software_instability = 5;
+         }
+         // Count subsequent decisions during the crisis
+         else if (_crisis_was_active
+         && sanity_zero_turns_remaining > 0)
+         {
+             sanity_zero_turns_remaining -= 1;
+
+             if (sanity_zero_turns_remaining <= 0)
+             {
+                 sanity_zero_turns_remaining = 0;
+                 sanity_zero_failure_pending = true;
+
+                 if (current_event_index < array_length(design_events) - 1)
+                 {
+                     campaign_failed = true;
+                     event_active = false;
+
+                     failure_reason =
+                         "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
+                 }
+             }
+         }
+
+         event_resolved = true;
+
+         game_message = "Decision applied.";
+         result_message = _choice.result;
+
+         // Immediate engineering resource exhaustion check
+         if (engineering_hours <= 0)
+         {
+             campaign_failed = true;
+             event_active = false;
+
+             failure_reason =
+                 "Project failed: Engineering hours exhausted.";
+         }
+
+         if (campaign_failed)
+         {
+             game_message = "PROJECT FAILURE!";
+             result_message = failure_reason;
+         }
+     }
+     else
+     {
+         game_message =
+             "Insufficient resources for this decision.";
+     }
+ };
+
+
+/// --------------------------------------------------
+/// REUSABLE CHOICE BUTTON MANAGEMENT
+/// --------------------------------------------------
+
+// Track button instances belonging to this controller
+choice_button_instances = [];
+
+
+ // Destroy all choice buttons owned by this controller
+ clear_choice_buttons = function()
+ {
+     for (var _i = 0; _i < array_length(choice_button_instances); _i++)
+     {
+         if (instance_exists(choice_button_instances[_i]))
+         {
+             instance_destroy(choice_button_instances[_i]);
+         }
+     }
+
+     choice_button_instances = [];
+ };
+
+
+// Create or rebuild buttons for the current event
+refresh_choice_buttons = function()
+{
+   
+    // Remove previously created buttons
+    clear_choice_buttons();
+
+
+    
+    // Calculate button layout using Flex Panels
+    var _choices = design_events[current_event_index].choices;
+    var _region = get_ui_regions().choices;
+
+    var _flex_layout = calculate_choice_layout_flex(
+        _choices,
+        _region
+    );
+
+    // Use calculated rectangles for our button instances
+    var _layout = _flex_layout.buttons;
+
+    // Report layouts that exceed the choice region
+    if (_flex_layout.overflow)
+    {
+        show_debug_message(
+            "WARNING: Choice layout exceeds its defined region."
+        );
+    }
+
+
+    // Create one reusable button per choice
+    for (var _i = 0; _i < array_length(_layout); _i++)
+    {
+        var _bounds = _layout[_i];
+
+        var _button = instance_create_depth(
+            0,
+            0,
+            depth - 1,
+            obj_choice_button
+        );
+
+        // Connect button to the game controller
+        _button.controller = id;
+        _button.choice_index = _i;
+
+        // Apply calculated position and dimensions
+        _button.button_x = _bounds.x;
+        _button.button_y = _bounds.y;
+        _button.button_width = _bounds.width;
+        _button.button_height = _bounds.height;
+
+        // Track this instance for later cleanup
+        array_push(choice_button_instances, _button);
+    }
+};
+
+		// Create the initial event's buttons
+		refresh_choice_buttons();
+	

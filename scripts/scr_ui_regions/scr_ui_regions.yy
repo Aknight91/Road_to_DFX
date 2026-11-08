@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_ui_regions",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_ui_regions",
+  "parent":{
+    "name":"Road_to_DFX",
+    "path":"Road_to_DFX.yyp",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

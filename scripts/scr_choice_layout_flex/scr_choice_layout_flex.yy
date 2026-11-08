@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_choice_layout_flex",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_choice_layout_flex",
+  "parent":{
+    "name":"Road_to_DFX",
+    "path":"Road_to_DFX.yyp",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

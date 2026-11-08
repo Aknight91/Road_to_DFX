@@ -79,6 +79,23 @@ draw_rectangle(35, 365, 35 + (250 * sanity / 100), 381, false);
 
 
 // --------------------------------------------------
+// PROJECT CALENDAR
+// --------------------------------------------------
+
+draw_set_color(c_black);
+draw_text(
+    35, 405,
+    "Current date: " + format_project_date(project_current_date)
+ );
+
+
+draw_text(
+    35, 425,
+    "Deadline: " + format_project_date(project_deadline_date)
+);
+
+
+// --------------------------------------------------
 // EVENT DISPLAY
 // --------------------------------------------------
 
@@ -100,14 +117,21 @@ if (event_active)
     {
         draw_text(370, 230, "SELECT YOUR RESPONSE:");
 
-        for (var i = 0; i < array_length(_event.choices); i++)
+       
+     // Legacy choice display
+	// Used only until reusable buttons are active
+        if (instance_number(obj_choice_button) == 0)
         {
-            draw_text(
-                370,
-                265 + (i * 40),
-                string(i + 1) + ". " + _event.choices[i].text
-            );
+            for (var i = 0; i < array_length(_event.choices); i++)
+            {
+                draw_text(
+                    370,
+                    265 + (i * 40),
+                    string(i + 1) + ". " + _event.choices[i].text
+                );
+            }
         }
+
     }
     else
     {
