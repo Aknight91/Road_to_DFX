@@ -39,12 +39,143 @@ if (event_active && !event_resolved)
 
 
 // --------------------------------------------------
+// PART 1B: SCROLL DECISION RESULTS
+// --------------------------------------------------
+
+if (event_active && event_resolved && result_message != "")
+{
+    // Get the shared results region
+    var _region = get_ui_regions().results;
+
+    // Calculate the height of the result message
+    var _layout = calculate_result_layout(
+        game_message,
+        result_message,
+        _region
+    );
+
+    // Calculate the maximum allowed scroll distance
+    var _max_scroll = max(
+        0,
+        _layout.result_height - _layout.available_result_height
+    );
+
+    // Get mouse coordinates relative to the GUI
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Check whether the mouse is over the result text area
+    var _mouse_over_results = point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _region.x,
+        _layout.result_y,
+        _region.x + _region.width,
+        _region.y + _region.height
+    );
+
+    // Scroll only when the mouse is over the results
+    if (_mouse_over_results)
+    {
+        if (mouse_wheel_down())
+        {
+            result_scroll_offset += 24;
+        }
+        else if (mouse_wheel_up())
+        {
+            result_scroll_offset -= 24;
+        }
+    }
+	
+// --------------------------------------------------
+// DRAG RESULT SCROLLBAR WITH LEFT MOUSE BUTTON
+// --------------------------------------------------
+
+if (_max_scroll > 0 && _layout.available_result_height > 0)
+{
+    // Get the scrollbar's shared layout position
+    var _bar = get_ui_regions().result_scrollbar;
+
+    var _track_y = _layout.result_y;
+    var _track_height = _layout.available_result_height;
+
+    // Match the thumb dimensions used in Draw GUI
+    var _thumb_height = clamp(
+        (_track_height * _track_height) / _layout.result_height,
+        18,
+        _track_height
+    );
+
+    var _thumb_travel = _track_height - _thumb_height;
+
+    // Calculate the thumb's current position
+    var _thumb_y = _track_y
+        + (result_scroll_offset / _max_scroll) * _thumb_travel;
+
+    // Start dragging when the player clicks the thumb
+    if (mouse_check_button_pressed(mb_left)
+    && point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _bar.x,
+        _thumb_y,
+        _bar.x + _bar.width,
+        _thumb_y + _thumb_height
+    ))
+    {
+        result_scroll_dragging = true;
+
+        // Remember where the thumb was grabbed
+        result_scroll_grab_offset = _mouse_y - _thumb_y;
+    }
+
+    // Update scroll position while dragging
+    if (result_scroll_dragging)
+    {
+        if (mouse_check_button(mb_left))
+        {
+            var _new_thumb_y = clamp(
+                _mouse_y - result_scroll_grab_offset,
+                _track_y,
+                _track_y + _thumb_travel
+            );
+
+            if (_thumb_travel > 0)
+            {
+                result_scroll_offset =
+                    ((_new_thumb_y - _track_y) / _thumb_travel)
+                    * _max_scroll;
+            }
+        }
+        else
+        {
+            // Stop dragging when the mouse is released
+            result_scroll_dragging = false;
+        }
+    }
+}
+else
+{
+    // Disable dragging when no scrolling is necessary
+    result_scroll_dragging = false;
+}
+
+    // Prevent scrolling beyond the message boundaries
+    result_scroll_offset = clamp(
+        result_scroll_offset,
+        0,
+        _max_scroll
+    );
+}
+
+
+// --------------------------------------------------
 // PART 2: ADVANCE TO THE NEXT EVENT
 // --------------------------------------------------
 
 if (event_active
 && event_resolved
-&& keyboard_check_pressed(vk_enter))
+&& (keyboard_check_pressed(vk_enter) || continue_requested))
 {
    
 	if (current_event_index < array_length(design_events) - 1)
@@ -128,6 +259,9 @@ if (event_active
 	}
 }
 
+// Reset the Continue request after checking progression
+continue_requested = false;
+
 // --------------------------------------------------
 // PART 3: CLEAN UP BUTTONS WHEN GAMEPLAY ENDS
 // --------------------------------------------------
@@ -136,6 +270,15 @@ if (!event_active && array_length(choice_button_instances) > 0)
 {
     clear_choice_buttons();
 }
+
+
+// Remove the Continue button when gameplay ends
+if (!event_active && instance_exists(continue_button_instance))
+{
+    instance_destroy(continue_button_instance);
+}
+
+
 /* 
  // --------------------------------------------------
  // TEMPORARY TEST: PROJECT CALENDAR INSPECTOR

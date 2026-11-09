@@ -58,8 +58,10 @@ design_events = [
                 dfm_change: 10,
                 dft_change: 0,
                 sanity_change: -8,
-                result: "Rework selected. Routing corrected. DFM improved."
-            },
+                result:"Rework selected. Routing corrected. DFM improved."
+
+				  
+			},
             {
                 text: "Apply a quick patch",
                 hours_cost: 4,
@@ -241,6 +243,7 @@ current_event_index = 0;
 
 event_active = true;
 event_resolved = false;
+continue_requested = false;
 
 campaign_complete = false;
 campaign_failed = false;
@@ -255,6 +258,25 @@ failure_reason = "";
 
 game_message = "";
 result_message = "";
+
+
+
+// --------------------------------------------------
+// DECISION RESULT SCROLLING
+// --------------------------------------------------
+
+// Vertical scroll position for decision results
+result_scroll_offset = 0;
+
+// --------------------------------------------------
+// RESULT SCROLLBAR DRAGGING
+// --------------------------------------------------
+
+// Whether the player is dragging the scrollbar
+result_scroll_dragging = false;
+
+// Mouse position relative to the scrollbar thumb
+result_scroll_grab_offset = 0;
 
 
  // --------------------------------------------------
@@ -579,12 +601,18 @@ apply_player_choice = function(_choice_index)
              game_message = "PROJECT FAILURE!";
              result_message = failure_reason;
          }
+		 
+		// Start each new decision result at the top
+		result_scroll_offset = 0;
+
      }
      else
      {
          game_message =
              "Insufficient resources for this decision.";
      }
+	 
+	 
  };
 
 
@@ -671,3 +699,18 @@ refresh_choice_buttons = function()
 		// Create the initial event's buttons
 		refresh_choice_buttons();
 	
+
+// --------------------------------------------------
+// CREATE THE CONTINUE BUTTON
+// --------------------------------------------------
+
+// Create one Continue button for the campaign
+continue_button_instance = instance_create_depth(
+    0,
+    0,
+    depth - 1,
+    obj_continue_button
+);
+
+// Connect the button to the game controller
+continue_button_instance.controller = id;

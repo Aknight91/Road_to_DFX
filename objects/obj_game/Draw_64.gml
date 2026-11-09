@@ -141,17 +141,167 @@ if (event_active)
 
     }
 
-    draw_text(370, 385, game_message);
-
     
-	if (result_message != "")
+    // Default message positions
+    var _message_x = 370;
+    var _message_y = 385;
+    var _result_y = 405;
+    var _text_width = 520;
+
+   
+	// Use the shared results region when an event is resolved
+	if (event_resolved)
 	{
-	    draw_text_ext(
-	        370, 405,
+	    var _results = get_ui_regions().results;
+
+	    // Calculate text positions using our layout function
+	    var _result_layout = calculate_result_layout(
+	        game_message,
 	        result_message,
-	        -1, 520
+	        _results
 	    );
+
+	    _message_x = _results.x;
+	    _message_y = _result_layout.message_y;
+	    _result_y = _result_layout.result_y;
+	    _text_width = _results.width;
 	}
+
+
+    // Draw the game message
+    draw_text(_message_x, _message_y, game_message);
+
+   
+   
+	
+    // Draw the complete decision result within its region
+    if (result_message != "")
+    {
+        var _results_region = get_ui_regions().results;
+
+        // Calculate the visible height below the game message
+        var _visible_height = max(
+            0,
+            _results_region.y + _results_region.height - _result_y
+        );
+
+        if (_visible_height > 0)
+        {
+            // Save the current clipping region
+            var _previous_scissor = gpu_get_scissor();
+
+            // Restrict drawing to the result text area
+            gpu_set_scissor(
+                _results_region.x,
+                _result_y,
+                _results_region.width,
+                _visible_height
+            );
+
+            // Draw the full message inside the clipped region
+			draw_text_ext(
+			    _message_x,
+			    _result_y - result_scroll_offset,
+			    result_message,
+			    -1,
+			    _text_width
+			);
+
+
+            // Restore the previous clipping region
+            gpu_set_scissor(_previous_scissor);
+        }
+    }
+
+
+// --------------------------------------------------
+// DRAW RESULT SCROLLBAR
+// --------------------------------------------------
+
+if (event_resolved && result_message != "")
+{
+    var _scroll_region = get_ui_regions().results;
+    var _bar_region = get_ui_regions().result_scrollbar;
+
+    // Measure the result text and available space
+    var _scroll_layout = calculate_result_layout(
+        game_message,
+        result_message,
+        _scroll_region
+    );
+
+    // Only draw a scrollbar when the text overflows
+    if (_scroll_layout.overflow
+    && _scroll_layout.available_result_height > 0)
+    {
+        var _track_x = _bar_region.x;
+        var _track_y = _scroll_layout.result_y;
+        var _track_width = _bar_region.width;
+        var _track_height = _scroll_layout.available_result_height;
+
+        // Determine the proportional thumb height
+        var _thumb_height = clamp(
+            _track_height * _track_height
+                / _scroll_layout.result_height,
+            18,
+            _track_height
+        );
+
+        // Calculate the thumb's vertical position
+        var _max_scroll = max(
+            0,
+            _scroll_layout.result_height - _track_height
+        );
+
+        var _scroll_ratio = 0;
+
+        if (_max_scroll > 0)
+        {
+            _scroll_ratio = clamp(
+                result_scroll_offset / _max_scroll,
+                0,
+                1
+            );
+        }
+
+        var _thumb_y = _track_y
+            + _scroll_ratio * (_track_height - _thumb_height);
+
+        // Draw scrollbar track
+        draw_set_color(make_color_rgb(100, 100, 100));
+
+        draw_rectangle(
+            _track_x,
+            _track_y,
+            _track_x + _track_width,
+            _track_y + _track_height,
+            false
+        );
+
+        // Draw scrollbar thumb
+        draw_set_color(make_color_rgb(220, 220, 220));
+
+        draw_rectangle(
+            _track_x,
+            _thumb_y,
+            _track_x + _track_width,
+            _thumb_y + _thumb_height,
+            false
+        );
+
+        // Draw thumb border
+        draw_set_color(c_black);
+
+        draw_rectangle(
+            _track_x,
+            _thumb_y,
+            _track_x + _track_width,
+            _thumb_y + _thumb_height,
+            true
+        );
+    }
+}
+
 
 }
 
