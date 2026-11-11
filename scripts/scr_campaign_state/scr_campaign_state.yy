@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_campaign_state",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_campaign_state",
+  "parent":{
+    "name":"Road_to_DFX",
+    "path":"Road_to_DFX.yyp",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

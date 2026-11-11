@@ -6,11 +6,12 @@ if (!instance_exists(controller))
     exit;
 }
 
-// Only show Continue after a decision is resolved
-if (!controller.event_active || !controller.event_resolved)
+// Only show Continue during the result-review phase
+if (controller.get_campaign_phase() != CampaignPhase.REVIEWING)
 {
     exit;
 }
+
 
 // Button background
 if (is_hovered)

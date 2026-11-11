@@ -245,9 +245,68 @@ event_active = true;
 event_resolved = false;
 continue_requested = false;
 
+/// @description Request progression to the next event
+
+request_continue = function()
+{
+    
+	// Only allow progression during the REVIEWING phase
+	if (get_campaign_phase() != CampaignPhase.REVIEWING)
+	{
+	    return;
+	}
+
+
+    // Register the request for the Step Event
+    continue_requested = true;
+};
+
 campaign_complete = false;
 campaign_failed = false;
 campaign_half_victory = false;
+
+
+ // --------------------------------------------------
+ // CAMPAIGN STATE INTERFACE
+ // --------------------------------------------------
+
+ // Return the current gameplay phase
+ get_campaign_phase = function()
+ {
+     if (!event_active)
+     {
+         return CampaignPhase.FINISHED;
+     }
+
+     if (event_resolved)
+     {
+         return CampaignPhase.REVIEWING;
+     }
+
+     return CampaignPhase.CHOOSING;
+ };
+
+
+ // Return the campaign outcome
+ get_campaign_outcome = function()
+ {
+     if (campaign_failed)
+     {
+         return CampaignOutcome.FAILURE;
+     }
+
+     if (campaign_complete)
+     {
+         if (campaign_half_victory)
+         {
+             return CampaignOutcome.HALF_VICTORY;
+         }
+
+         return CampaignOutcome.VICTORY;
+     }
+
+     return CampaignOutcome.NONE;
+ };
 
 
 required_dfa = 50;
@@ -494,15 +553,31 @@ result_scroll_grab_offset = 0;
 
 apply_player_choice = function(_choice_index)
 {
-    // Reject decisions when gameplay is inactive
-    // or the current event has already been resolved.
-    if (!event_active || event_resolved)
-    {
-        exit;
-    }
+    
+	// Only process decisions during the CHOOSING phase
+	if (get_campaign_phase() != CampaignPhase.CHOOSING)
+	{
+	    exit;
+	}
 
-    var _event = design_events[current_event_index];
-    var _choice = _event.choices[_choice_index];
+
+    
+	var _event = design_events[current_event_index];
+
+	// Reject choice indices outside the current event's choices
+	if (_choice_index < 0
+	|| _choice_index >= array_length(_event.choices))
+	{
+	    show_debug_message(
+	        "WARNING: Invalid choice index: "
+	        + string(_choice_index)
+	    );
+
+	    exit;
+	}
+
+	var _choice = _event.choices[_choice_index];
+
 
     if (engineering_hours >= _choice.hours_cost)
 
@@ -684,6 +759,12 @@ refresh_choice_buttons = function()
         // Connect button to the game controller
         _button.controller = id;
         _button.choice_index = _i;
+		
+		
+		// Supply the button's display text
+		_button.choice_label =
+		    string(_i + 1) + ". " + _choices[_i].text;
+
 
         // Apply calculated position and dimensions
         _button.button_x = _bounds.x;

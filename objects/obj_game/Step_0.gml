@@ -14,7 +14,8 @@ if (keyboard_check_pressed(ord("D"))
 // PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
 // --------------------------------------------------
 
-if (event_active && !event_resolved)
+if (get_campaign_phase() == CampaignPhase.CHOOSING)
+
 {
     var _choice_index = -1;
 
@@ -30,10 +31,13 @@ if (event_active && !event_resolved)
  // --------------------------------------------------
 
    
-    if (_choice_index != -1)
-    {
-        apply_player_choice(_choice_index);
-    }
+   
+	if (_choice_index >= 0
+	&& _choice_index < array_length(design_events[current_event_index].choices))
+	{
+	    apply_player_choice(_choice_index);
+	}
+
 
 }
 
@@ -42,7 +46,8 @@ if (event_active && !event_resolved)
 // PART 1B: SCROLL DECISION RESULTS
 // --------------------------------------------------
 
-if (event_active && event_resolved && result_message != "")
+if (get_campaign_phase() == CampaignPhase.REVIEWING
+&& result_message != "")
 {
     // Get the shared results region
     var _region = get_ui_regions().results;
@@ -173,9 +178,15 @@ else
 // PART 2: ADVANCE TO THE NEXT EVENT
 // --------------------------------------------------
 
-if (event_active
-&& event_resolved
-&& (keyboard_check_pressed(vk_enter) || continue_requested))
+// Route keyboard progression through the controller
+if (keyboard_check_pressed(vk_enter))
+{
+     request_continue();
+}
+
+
+if (get_campaign_phase() == CampaignPhase.REVIEWING
+&& continue_requested)
 {
    
 	if (current_event_index < array_length(design_events) - 1)
@@ -266,17 +277,23 @@ continue_requested = false;
 // PART 3: CLEAN UP BUTTONS WHEN GAMEPLAY ENDS
 // --------------------------------------------------
 
-if (!event_active && array_length(choice_button_instances) > 0)
+
+if (get_campaign_phase() == CampaignPhase.FINISHED
+&& array_length(choice_button_instances) > 0)
 {
     clear_choice_buttons();
 }
 
 
+
 // Remove the Continue button when gameplay ends
-if (!event_active && instance_exists(continue_button_instance))
+
+if (get_campaign_phase() == CampaignPhase.FINISHED
+&& instance_exists(continue_button_instance))
 {
     instance_destroy(continue_button_instance);
 }
+
 
 
 /* 

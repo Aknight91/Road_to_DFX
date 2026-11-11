@@ -6,12 +6,14 @@ if (!instance_exists(controller))
     exit;
 }
 
-// Disable interaction unless a decision has been resolved
-if (!controller.event_active || !controller.event_resolved)
-{
-    is_hovered = false;
-    exit;
-}
+
+ // Only allow interaction while reviewing a decision
+ if (controller.get_campaign_phase() != CampaignPhase.REVIEWING)
+ {
+     is_hovered = false;
+     exit;
+ }
+
 
 // Get mouse position in GUI coordinates
 var _mouse_x = device_mouse_x_to_gui(0);
@@ -28,7 +30,9 @@ is_hovered = point_in_rectangle(
 );
 
 // Request progression when clicked
+
 if (is_hovered && mouse_check_button_pressed(mb_left))
 {
-    controller.continue_requested = true;
+    controller.request_continue();
 }
+

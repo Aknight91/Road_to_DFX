@@ -7,6 +7,10 @@ controller = noone;
 // Index of the choice represented by this button
 choice_index = -1;
 
+// Display text provided by the game controller
+choice_label = "";
+
+
 // Button position in GUI coordinates
 button_x = 370;
 button_y = 260;

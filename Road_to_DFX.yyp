@@ -23,6 +23,7 @@
     {"id":{"name":"obj_continue_button","path":"objects/obj_continue_button/obj_continue_button.yy",},},
     {"id":{"name":"obj_game","path":"objects/obj_game/obj_game.yy",},},
     {"id":{"name":"Room1","path":"rooms/Room1/Room1.yy",},},
+    {"id":{"name":"scr_campaign_state","path":"scripts/scr_campaign_state/scr_campaign_state.yy",},},
     {"id":{"name":"scr_choice_layout_flex","path":"scripts/scr_choice_layout_flex/scr_choice_layout_flex.yy",},},
     {"id":{"name":"scr_choice_layout","path":"scripts/scr_choice_layout/scr_choice_layout.yy",},},
     {"id":{"name":"scr_result_layout","path":"scripts/scr_result_layout/scr_result_layout.yy",},},

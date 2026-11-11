@@ -99,7 +99,8 @@ draw_text(
 // EVENT DISPLAY
 // --------------------------------------------------
 
-if (event_active)
+
+if (get_campaign_phase() != CampaignPhase.FINISHED)
 {
     var _event = design_events[current_event_index];
 
@@ -113,7 +114,7 @@ if (event_active)
         -1, 520
     );
 
-    if (!event_resolved)
+    if (get_campaign_phase() == CampaignPhase.CHOOSING)
     {
         draw_text(370, 230, "SELECT YOUR RESPONSE:");
 
@@ -150,7 +151,7 @@ if (event_active)
 
    
 	// Use the shared results region when an event is resolved
-	if (event_resolved)
+	if (get_campaign_phase() == CampaignPhase.REVIEWING)
 	{
 	    var _results = get_ui_regions().results;
 
@@ -218,7 +219,8 @@ if (event_active)
 // DRAW RESULT SCROLLBAR
 // --------------------------------------------------
 
-if (event_resolved && result_message != "")
+if (get_campaign_phase() == CampaignPhase.REVIEWING
+&& result_message != "")
 {
     var _scroll_region = get_ui_regions().results;
     var _bar_region = get_ui_regions().result_scrollbar;
@@ -309,7 +311,10 @@ if (event_resolved && result_message != "")
 // CAMPAIGN VICTORY
 // --------------------------------------------------
 
-else if (campaign_complete)
+
+else if (get_campaign_outcome() == CampaignOutcome.VICTORY
+|| get_campaign_outcome() == CampaignOutcome.HALF_VICTORY)
+
 {
     draw_set_color(c_black);
 
@@ -335,7 +340,8 @@ else if (campaign_complete)
 // CAMPAIGN FAILURE
 // --------------------------------------------------
 
-else if (campaign_failed)
+
+else if (get_campaign_outcome() == CampaignOutcome.FAILURE)
 {
     draw_set_color(c_black);
 
