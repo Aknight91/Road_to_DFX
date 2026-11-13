@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_gameplay_choice_renderer",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_gameplay_choice_renderer",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
