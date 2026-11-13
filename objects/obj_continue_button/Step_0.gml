@@ -6,6 +6,13 @@ if (!instance_exists(controller))
     exit;
 }
 
+// Only handle mouse interaction when gameplay owns input
+if (!controller.screen_manager.can_receive_input(ScreenId.GAMEPLAY))
+{
+    is_hovered = false;
+    exit;
+}
+
 
  // Only allow interaction while reviewing a decision
  if (controller.get_campaign_phase() != CampaignPhase.REVIEWING)

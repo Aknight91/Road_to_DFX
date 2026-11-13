@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_campaign_summary_renderer",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_campaign_summary_renderer",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

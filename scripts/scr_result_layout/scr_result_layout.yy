@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_result_layout",
   "parent":{
-    "name":"Road_to_DFX",
-    "path":"Road_to_DFX.yyp",
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

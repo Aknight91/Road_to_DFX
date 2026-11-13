@@ -7,9 +7,23 @@ if (!instance_exists(controller))
     exit;
 }
 
+// Only draw choice buttons on the gameplay screen
+if (controller.screen_manager.get_current_screen()
+    != ScreenId.GAMEPLAY)
+{
+    exit;
+}
+
 
 // Only draw buttons during the CHOOSING phase
 if (controller.get_campaign_phase() != CampaignPhase.CHOOSING)
+{
+    exit;
+}
+
+// Only draw Continue on the gameplay screen
+if (controller.screen_manager.get_current_screen()
+    != ScreenId.GAMEPLAY)
 {
     exit;
 }

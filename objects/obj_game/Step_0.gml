@@ -46,30 +46,31 @@ if (get_campaign_phase() == CampaignPhase.CHOOSING)
 // PART 1B: SCROLL DECISION RESULTS
 // --------------------------------------------------
 
-if (get_campaign_phase() == CampaignPhase.REVIEWING
+
+/// --------------------------------------------------
+/// PART 1B: SCROLL DECISION RESULTS
+/// --------------------------------------------------
+
+if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.REVIEWING
 && result_message != "")
 {
-    // Get the shared results region
-    var _region = get_ui_regions().results;
+    // Get shared results region
+    var _regions = get_ui_regions();
+    var _region = _regions.results;
 
-    // Calculate the height of the result message
+    // Calculate result text layout
     var _layout = calculate_result_layout(
         game_message,
         result_message,
         _region
     );
 
-    // Calculate the maximum allowed scroll distance
-    var _max_scroll = max(
-        0,
-        _layout.result_height - _layout.available_result_height
-    );
-
-    // Get mouse coordinates relative to the GUI
+    // Get mouse coordinates in GUI space
     var _mouse_x = device_mouse_x_to_gui(0);
     var _mouse_y = device_mouse_y_to_gui(0);
 
-    // Check whether the mouse is over the result text area
+    // Check whether mouse is over the results
     var _mouse_over_results = point_in_rectangle(
         _mouse_x,
         _mouse_y,
@@ -79,7 +80,10 @@ if (get_campaign_phase() == CampaignPhase.REVIEWING
         _region.y + _region.height
     );
 
-    // Scroll only when the mouse is over the results
+    // --------------------------------------------------
+    // MOUSE WHEEL SCROLLING
+    // --------------------------------------------------
+
     if (_mouse_over_results)
     {
         if (mouse_wheel_down())
@@ -91,87 +95,94 @@ if (get_campaign_phase() == CampaignPhase.REVIEWING
             result_scroll_offset -= 24;
         }
     }
-	
-// --------------------------------------------------
-// DRAG RESULT SCROLLBAR WITH LEFT MOUSE BUTTON
-// --------------------------------------------------
 
-if (_max_scroll > 0 && _layout.available_result_height > 0)
-{
-    // Get the scrollbar's shared layout position
-    var _bar = get_ui_regions().result_scrollbar;
+    // --------------------------------------------------
+    // CALCULATE SHARED SCROLLBAR GEOMETRY
+    // --------------------------------------------------
 
-    var _track_y = _layout.result_y;
-    var _track_height = _layout.available_result_height;
-
-    // Match the thumb dimensions used in Draw GUI
-    var _thumb_height = clamp(
-        (_track_height * _track_height) / _layout.result_height,
-        18,
-        _track_height
+    var _scrollbar = calculate_result_scrollbar_layout(
+        _layout,
+        _regions.result_scrollbar,
+        result_scroll_offset
     );
 
-    var _thumb_travel = _track_height - _thumb_height;
+    var _max_scroll = _scrollbar.max_scroll;
 
-    // Calculate the thumb's current position
-    var _thumb_y = _track_y
-        + (result_scroll_offset / _max_scroll) * _thumb_travel;
+    // --------------------------------------------------
+    // DRAG RESULT SCROLLBAR
+    // --------------------------------------------------
 
-    // Start dragging when the player clicks the thumb
-    if (mouse_check_button_pressed(mb_left)
-    && point_in_rectangle(
-        _mouse_x,
-        _mouse_y,
-        _bar.x,
-        _thumb_y,
-        _bar.x + _bar.width,
-        _thumb_y + _thumb_height
-    ))
+    if (_scrollbar.visible)
     {
-        result_scroll_dragging = true;
+        // Retrieve shared scrollbar geometry
+        var _track = _scrollbar.track;
+        var _thumb = _scrollbar.thumb;
+        var _thumb_travel = _scrollbar.thumb_travel;
 
-        // Remember where the thumb was grabbed
-        result_scroll_grab_offset = _mouse_y - _thumb_y;
-    }
-
-    // Update scroll position while dragging
-    if (result_scroll_dragging)
-    {
-        if (mouse_check_button(mb_left))
+        // Start dragging when clicking the thumb
+        if (mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _thumb.x,
+            _thumb.y,
+            _thumb.x + _thumb.width,
+            _thumb.y + _thumb.height
+        ))
         {
-            var _new_thumb_y = clamp(
-                _mouse_y - result_scroll_grab_offset,
-                _track_y,
-                _track_y + _thumb_travel
-            );
+            result_scroll_dragging = true;
 
-            if (_thumb_travel > 0)
+            // Record where the thumb was grabbed
+            result_scroll_grab_offset = _mouse_y - _thumb.y;
+        }
+
+        // Update scrollbar while dragging
+        if (result_scroll_dragging)
+        {
+            if (mouse_check_button(mb_left))
             {
-                result_scroll_offset =
-                    ((_new_thumb_y - _track_y) / _thumb_travel)
-                    * _max_scroll;
+                var _new_thumb_y = clamp(
+                    _mouse_y - result_scroll_grab_offset,
+                    _track.y,
+                    _track.y + _thumb_travel
+                );
+
+                if (_thumb_travel > 0)
+                {
+                    result_scroll_offset =
+                        ((_new_thumb_y - _track.y) / _thumb_travel)
+                        * _max_scroll;
+                }
+            }
+            else
+            {
+                // Stop dragging on mouse release
+                result_scroll_dragging = false;
             }
         }
-        else
-        {
-            // Stop dragging when the mouse is released
-            result_scroll_dragging = false;
-        }
     }
-}
-else
-{
-    // Disable dragging when no scrolling is necessary
-    result_scroll_dragging = false;
-}
+    else
+    {
+        // No scrollbar needed
+        result_scroll_dragging = false;
+    }
 
-    // Prevent scrolling beyond the message boundaries
+    // --------------------------------------------------
+    // CLAMP SCROLL POSITION
+    // --------------------------------------------------
+
     result_scroll_offset = clamp(
         result_scroll_offset,
         0,
         _max_scroll
     );
 }
+else
+{
+    // Cancel dragging when gameplay loses input
+    result_scroll_dragging = false;
+}
+
 
 
 // --------------------------------------------------
@@ -185,10 +196,12 @@ if (keyboard_check_pressed(vk_enter))
 }
 
 
-if (get_campaign_phase() == CampaignPhase.REVIEWING
+
+if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.REVIEWING
 && continue_requested)
 {
-   
+ 
 	if (current_event_index < array_length(design_events) - 1)
 	{
 	    current_event_index += 1;

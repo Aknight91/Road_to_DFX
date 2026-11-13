@@ -5,32 +5,49 @@ window_set_size(960, 540);
 // Set the reference resolution for GUI elements
 display_set_gui_size(960, 540);
 
+// --------------------------------------------------
+// SCREEN MANAGEMENT
+// --------------------------------------------------
 
-// Player Resources
-days_remaining = 25;
-engineering_hours = 100;
-budget = 100;
-morale = 80;
-
-drc_violations = 25;
-manufacturing_risk = 10;
+// Initialize screen navigation
+// Start in gameplay until title/setup screens are implemented
+screen_manager = new ScreenManager(ScreenId.GAMEPLAY);
 
 
-// Primary DFX Status Bars
-dfa = 50;
-dfm = 50;
-dft = 50;
-sanity = 100;
 
+/// @description Initialize campaign starting statistics
 
-// Sanity Crisis System
-sanity_zero_active = false;
-sanity_zero_turns_remaining = 3;
-sanity_zero_failure_pending = false;
+// --------------------------------------------------
+// CAMPAIGN STATISTICS INITIALIZATION
+// --------------------------------------------------
 
+initialize_campaign_stats = function()
+{
+    // Player resources
+    days_remaining = 25;
+    engineering_hours = 100;
+    budget = 100;
+    morale = 80;
 
-// Software instability multiplier
-software_instability = 1;
+    // Manufacturing conditions
+    drc_violations = 25;
+    manufacturing_risk = 10;
+
+    // Primary DFX status bars
+    dfa = 50;
+    dfm = 50;
+    dft = 50;
+    sanity = 100;
+
+    // Sanity Crisis
+    sanity_zero_active = false;
+    sanity_zero_turns_remaining = 3;
+    sanity_zero_failure_pending = false;
+
+    // Software instability
+    software_instability = 1;
+};
+
 
 // Debug Panel
 debug_panel_open = false;
@@ -58,7 +75,26 @@ design_events = [
                 dfm_change: 10,
                 dft_change: 0,
                 sanity_change: -8,
-                result:"Rework selected. Routing corrected. DFM improved."
+               
+				// Permanent long-result regression case for UI testing
+				result:
+				    "The engineering team has completed the placement and "
+				    + "routing rework required by the revised pin assignments."
+				    + "\n\n"
+				    + "Several critical connections required additional routing "
+				    + "attention. The team reviewed trace clearances, routing "
+				    + "constraints, and the manufacturing implications of the "
+				    + "revised layout. Additional engineering hours were spent "
+				    + "correcting the affected areas rather than accepting "
+				    + "potential downstream fabrication problems."
+				    + "\n\n"
+				    + "The updated routing has been incorporated into the "
+				    + "design. Manufacturing risk has been reviewed, and the "
+				    + "project can proceed to its next engineering checkpoint. "
+				    + "While the rework consumed valuable schedule resources, "
+				    + "the team avoided releasing the original routing concerns "
+				    + "into the next stage of development."
+
 
 				  
 			},
@@ -238,32 +274,52 @@ design_events = [
 ];
 
 
-// Track the active event.
-current_event_index = 0;
 
-event_active = true;
-event_resolved = false;
-continue_requested = false;
+ // --------------------------------------------------
+ // CAMPAIGN PROGRESSION INITIALIZATION
+ // --------------------------------------------------
+
+ initialize_campaign_progress = function()
+ {
+     // Begin with the first engineering event
+     current_event_index = 0;
+
+     // Initial gameplay state
+     event_active = true;
+     event_resolved = false;
+
+     // Clear pending progression requests
+     continue_requested = false;
+
+     // Reset campaign outcomes
+     campaign_complete = false;
+     campaign_failed = false;
+     campaign_half_victory = false;
+ };
+
 
 /// @description Request progression to the next event
 
 request_continue = function()
 {
-    
-	// Only allow progression during the REVIEWING phase
-	if (get_campaign_phase() != CampaignPhase.REVIEWING)
-	{
-	    return;
-	}
+    // Reject progression when gameplay does not own input
+    if (!screen_manager.can_receive_input(ScreenId.GAMEPLAY))
+    {
+        return;
+    }
 
+    // Only allow progression during the REVIEWING phase
+    if (get_campaign_phase() != CampaignPhase.REVIEWING)
+    {
+        return;
+    }
 
     // Register the request for the Step Event
     continue_requested = true;
 };
 
-campaign_complete = false;
-campaign_failed = false;
-campaign_half_victory = false;
+
+
 
 
  // --------------------------------------------------
@@ -313,62 +369,73 @@ required_dfa = 50;
 required_dfm = 50;
 required_dft = 50;
 required_sanity = 1;
-failure_reason = "";
-
-game_message = "";
-result_message = "";
-
-
 
 // --------------------------------------------------
-// DECISION RESULT SCROLLING
+// CAMPAIGN MESSAGE INITIALIZATION
 // --------------------------------------------------
 
-// Vertical scroll position for decision results
-result_scroll_offset = 0;
+initialize_campaign_messages = function()
+{
+    // Clear previous campaign failure information
+    failure_reason = "";
+
+    // Clear event and campaign messages
+    game_message = "";
+    result_message = "";
+};
+
+
+/// @description Reset decision result scrolling state
 
 // --------------------------------------------------
-// RESULT SCROLLBAR DRAGGING
+// RESULT SCROLLING INITIALIZATION
 // --------------------------------------------------
 
-// Whether the player is dragging the scrollbar
-result_scroll_dragging = false;
+reset_result_scroll_state = function()
+{
+    // Reset the visible position of result text
+    result_scroll_offset = 0;
 
-// Mouse position relative to the scrollbar thumb
-result_scroll_grab_offset = 0;
+    // Cancel any active scrollbar dragging
+    result_scroll_dragging = false;
+
+    // Clear the previous mouse grab position
+    result_scroll_grab_offset = 0;
+};
+
 
 
  // --------------------------------------------------
- // PROJECT CALENDAR SYSTEM
+ // CAMPAIGN CALENDAR INITIALIZATION
  // --------------------------------------------------
 
- // Project dates
- project_start_date = date_create_datetime(2027, 1, 4, 0, 0, 0);
- project_current_date = project_start_date;
- project_deadline_date = date_create_datetime(2027, 2, 8, 0, 0, 0);
+ initialize_campaign_calendar = function()
+ {
+     // Project dates
+     project_start_date = date_create_datetime(
+         2027, 1, 4, 0, 0, 0
+     );
 
+     project_current_date = project_start_date;
 
- // Standard engineering workday
- hours_per_workday = 8;
+     project_deadline_date = date_create_datetime(
+         2027, 2, 8, 0, 0, 0
+     );
 
- // Track engineering time consumed
- project_work_hours_elapsed = 0;
- project_work_hours_today = 0;
- project_schedule_delay_days = 0;
+     // Standard engineering workday
+     hours_per_workday = 8;
 
+     // Engineering time tracking
+     project_work_hours_elapsed = 0;
+     project_work_hours_today = 0;
+     project_schedule_delay_days = 0;
 
- // --------------------------------------------------
- // OVERDUE SANITY PENALTY SYSTEM
- // --------------------------------------------------
+     // Overdue Sanity penalty configuration
+     overdue_sanity_penalty_per_day = 20;
 
-
- // Sanity lost per overdue working day
- overdue_sanity_penalty_per_day = 20;
-
-
-
- // Number of overdue workdays already penalized
- overdue_days_penalized = 0;
+     // Number of overdue workdays already penalized
+     overdue_days_penalized = 0;
+ };
 
 
  // --------------------------------------------------
@@ -553,7 +620,13 @@ result_scroll_grab_offset = 0;
 
 apply_player_choice = function(_choice_index)
 {
-    
+	
+	// Reject player decisions when gameplay does not own input
+	if (!screen_manager.can_receive_input(ScreenId.GAMEPLAY))
+	{
+	    exit;
+	}
+
 	// Only process decisions during the CHOOSING phase
 	if (get_campaign_phase() != CampaignPhase.CHOOSING)
 	{
@@ -698,6 +771,8 @@ apply_player_choice = function(_choice_index)
 // Track button instances belonging to this controller
 choice_button_instances = [];
 
+// Track the Continue button belonging to this controller
+continue_button_instance = noone;
 
  // Destroy all choice buttons owned by this controller
  clear_choice_buttons = function()
@@ -776,22 +851,70 @@ refresh_choice_buttons = function()
         array_push(choice_button_instances, _button);
     }
 };
+		
+		// --------------------------------------------------
+		// CENTRALIZED CAMPAIGN STATE INITIALIZATION
+		// --------------------------------------------------
 
-		// Create the initial event's buttons
-		refresh_choice_buttons();
-	
+		initialize_campaign_state = function()
+		{
+		    // Reset engineering resources and DFX values
+		    initialize_campaign_stats();
+
+		    // Reset dates, work hours, and overdue tracking
+		    initialize_campaign_calendar();
+
+		    // Reset event progression and campaign outcome
+		    initialize_campaign_progress();
+
+		    // Clear previous campaign messages
+		    initialize_campaign_messages();
+
+		    // Reset temporary results UI state
+		    reset_result_scroll_state();
+		};		
+
+/// @description Start or restart a campaign
 
 // --------------------------------------------------
-// CREATE THE CONTINUE BUTTON
+// START CAMPAIGN
 // --------------------------------------------------
 
-// Create one Continue button for the campaign
-continue_button_instance = instance_create_depth(
-    0,
-    0,
-    depth - 1,
-    obj_continue_button
-);
+start_campaign = function()
+{
+    // Reset all campaign-specific data
+    initialize_campaign_state();
+
+    // Rebuild choice buttons for the first event
+    // This also removes the previous choice buttons
+    refresh_choice_buttons();
+
+    // Create a Continue button only if one does not exist
+    if (!instance_exists(continue_button_instance))
+    {
+        continue_button_instance = instance_create_depth(
+            0,
+            0,
+            depth - 1,
+            obj_continue_button
+        );
+    }
+
+    // Ensure the Continue button belongs to this controller
+    continue_button_instance.controller = id;
+
+    // Display gameplay after initialization
+    screen_manager.navigate_to(ScreenId.GAMEPLAY);
+};
+
+
+// --------------------------------------------------
+// INITIAL PROTOTYPE CAMPAIGN
+// --------------------------------------------------
+
+// Start the first campaign
+start_campaign();
+
 
 // Connect the button to the game controller
 continue_button_instance.controller = id;
