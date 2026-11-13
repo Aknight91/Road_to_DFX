@@ -1,18 +1,76 @@
 
 /// @description Decisions, progression, and campaign outcomes
 
+
 // --------------------------------------------------
 // TITLE SCREEN INPUT
 // --------------------------------------------------
 
-// Navigate from the title screen to campaign setup.
-// Do not start a campaign until setup is complete.
-
-if (screen_manager.can_receive_input(ScreenId.TITLE)
-&& keyboard_check_pressed(vk_enter))
+if (screen_manager.can_receive_input(ScreenId.TITLE))
 {
-    screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
+    // Get shared Start button geometry
+    var _start_button = get_title_start_button_bounds();
+
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Detect mouse click inside the Start button
+    var _start_clicked =
+        mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _start_button.x,
+            _start_button.y,
+            _start_button.x + _start_button.width,
+            _start_button.y + _start_button.height
+        );
+
+    // Support both mouse and keyboard navigation
+    if (_start_clicked
+    || keyboard_check_pressed(vk_enter))
+    {
+        screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
+    }
 }
+
+// --------------------------------------------------
+// CAMPAIGN SETUP INPUT
+// --------------------------------------------------
+
+// Allow returning to the title screen without
+// starting or modifying a campaign.
+
+if (screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP))
+{
+    // Get shared Back button geometry
+    var _back_button = get_campaign_setup_back_button_bounds();
+
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Detect a mouse click inside the button
+    var _back_clicked =
+        mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _back_button.x,
+            _back_button.y,
+            _back_button.x + _back_button.width,
+            _back_button.y + _back_button.height
+        );
+
+    // Support mouse and keyboard navigation
+    if (_back_clicked
+    || keyboard_check_pressed(vk_escape))
+    {
+        screen_manager.navigate_to(ScreenId.TITLE);
+    }
+}
+
 
 
 // Toggle Debug Panel with CTRL + D

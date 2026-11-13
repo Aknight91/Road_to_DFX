@@ -36,11 +36,13 @@ function draw_primary_screen(_screen_id, _game)
         // CAMPAIGN SETUP SCREEN
         // ----------------------------------------------
 
-        case ScreenId.CAMPAIGN_SETUP:
+		case ScreenId.CAMPAIGN_SETUP:
 
-            draw_campaign_setup_screen();
+		    draw_campaign_setup_screen(
+		        _game.selected_campaign_difficulty
+		    );
 
-            break;
+		    break;
 
 
         // ----------------------------------------------

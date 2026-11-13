@@ -13,6 +13,17 @@ display_set_gui_size(960, 540);
 // Start at the title screen before beginning a campaign
 screen_manager = new ScreenManager(ScreenId.TITLE);	
 
+// --------------------------------------------------
+// CAMPAIGN SETUP SELECTION
+// --------------------------------------------------
+
+
+// No difficulty is selected automatically.
+// The player must make an explicit choice.
+
+selected_campaign_difficulty = CampaignDifficulty.NONE;
+
+
 
 
 
