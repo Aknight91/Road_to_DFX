@@ -10,8 +10,9 @@ display_set_gui_size(960, 540);
 // --------------------------------------------------
 
 // Initialize screen navigation
-// Start in gameplay until title/setup screens are implemented
-screen_manager = new ScreenManager(ScreenId.GAMEPLAY);
+// Start at the title screen before beginning a campaign
+screen_manager = new ScreenManager(ScreenId.TITLE);	
+
 
 
 
@@ -908,13 +909,13 @@ start_campaign = function()
 };
 
 
+
 // --------------------------------------------------
-// INITIAL PROTOTYPE CAMPAIGN
+// INITIAL CONTROLLER STATE
 // --------------------------------------------------
 
-// Start the first campaign
-start_campaign();
+// Initialize campaign variables without starting gameplay.
+// The campaign will start through the title/setup menu.
 
+initialize_campaign_state();
 
-// Connect the button to the game controller
-continue_button_instance.controller = id;

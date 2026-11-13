@@ -1,6 +1,19 @@
 
 /// @description Decisions, progression, and campaign outcomes
 
+// --------------------------------------------------
+// TITLE SCREEN INPUT
+// --------------------------------------------------
+
+// Navigate from the title screen to campaign setup.
+// Do not start a campaign until setup is complete.
+
+if (screen_manager.can_receive_input(ScreenId.TITLE)
+&& keyboard_check_pressed(vk_enter))
+{
+    screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
+}
+
 
 // Toggle Debug Panel with CTRL + D
 if (keyboard_check_pressed(ord("D"))

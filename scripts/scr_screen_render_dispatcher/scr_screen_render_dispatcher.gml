@@ -1,3 +1,4 @@
+
 /// @description Dispatch rendering to the active screen
 
 function draw_primary_screen(_screen_id, _game)
@@ -9,6 +10,17 @@ function draw_primary_screen(_screen_id, _game)
     switch (_screen_id)
     {
         // ----------------------------------------------
+        // TITLE SCREEN
+        // ----------------------------------------------
+
+        case ScreenId.TITLE:
+
+            draw_title_screen();
+
+            break;
+
+
+        // ----------------------------------------------
         // GAMEPLAY SCREEN
         // ----------------------------------------------
 
@@ -19,17 +31,26 @@ function draw_primary_screen(_screen_id, _game)
             break;
 
 
+      
+        // ----------------------------------------------
+        // CAMPAIGN SETUP SCREEN
+        // ----------------------------------------------
+
+        case ScreenId.CAMPAIGN_SETUP:
+
+            draw_campaign_setup_screen();
+
+            break;
+
+
         // ----------------------------------------------
         // FUTURE PRIMARY SCREENS
         // ----------------------------------------------
 
-        // ScreenId.TITLE
-        // ScreenId.CAMPAIGN_SETUP
         // ScreenId.CAMPAIGN_RESULTS
         //
-        // These will be connected as their
-        // individual renderers are implemented.
-
+        // This will be connected when its
+        // renderer is implemented.
 
         // ----------------------------------------------
         // UNHANDLED SCREEN
@@ -38,9 +59,8 @@ function draw_primary_screen(_screen_id, _game)
         default:
 
             // No renderer registered for this screen.
-            // Navigation to unfinished screens will
-            // remain disabled until implementation.
 
             break;
     }
 }
+
