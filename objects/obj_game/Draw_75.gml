@@ -16,5 +16,6 @@ if (_top_overlay == OverlayId.PAUSE_MENU
 // Draw confirmation above the pause menu
 if (_top_overlay == OverlayId.CONFIRMATION)
 {
-    draw_pause_confirmation_overlay();
+    draw_pause_confirmation_overlay(pause_confirmation_action);
+
 }

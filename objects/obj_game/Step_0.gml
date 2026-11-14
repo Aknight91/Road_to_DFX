@@ -171,19 +171,6 @@ if (_screen_at_step_start == ScreenId.CAMPAIGN_SETUP
 
 
 // --------------------------------------------------
-// TEMPORARY REGRESSION TEST: ENTER GAMEPLAY
-// --------------------------------------------------
-
-// Development-only shortcut.
-// Remove after Campaign Setup can start gameplay normally.
-
-if (screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP)
-&& keyboard_check_pressed(vk_f9))
-{
-    start_campaign();
-}
-
-// --------------------------------------------------
 // PAUSE MENU - ESCAPE KEY INPUT
 // --------------------------------------------------
 
@@ -200,6 +187,8 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
 if (_top_overlay == OverlayId.CONFIRMATION)
 {
     screen_manager.close_top_overlay();
+	
+	pause_confirmation_action = "";
 
     show_debug_message("PAUSE MENU: Confirmation cancelled");
 }
@@ -276,10 +265,82 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
         _restart_button.y + _restart_button.height
     ))
     {
-        // Open confirmation without changing campaign state
+        
+	// Record the requested confirmation action
+	pause_confirmation_action = "restart";
+
+	// Open confirmation without changing campaign state
+	screen_manager.open_overlay(OverlayId.CONFIRMATION);
+
+	}
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RETURN TO TITLE CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.PAUSE_MENU
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Return to Title is menu index 5
+    var _return_button = get_pause_menu_button_bounds(5);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _return_button.x,
+        _return_button.y,
+        _return_button.x + _return_button.width,
+        _return_button.y + _return_button.height
+    ))
+    {
+        // Record the requested action
+        pause_confirmation_action = "title";
+
+        // Open the existing confirmation overlay
         screen_manager.open_overlay(OverlayId.CONFIRMATION);
     }
 }
+
+// --------------------------------------------------
+// PAUSE MENU - QUIT TO DESKTOP CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.PAUSE_MENU
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Quit to Desktop is menu index 6
+    var _quit_button = get_pause_menu_button_bounds(6);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _quit_button.x,
+        _quit_button.y,
+        _quit_button.x + _quit_button.width,
+        _quit_button.y + _quit_button.height
+    ))
+    {
+        // Record the requested confirmation action
+        pause_confirmation_action = "quit";
+
+        // Open confirmation without exiting the game
+        screen_manager.open_overlay(OverlayId.CONFIRMATION);
+    }
+}
+
+
 
 // --------------------------------------------------
 // PAUSE MENU - CONFIRMATION BUTTON INPUT
@@ -293,7 +354,7 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
     var _mouse_x = device_mouse_x_to_gui(0);
     var _mouse_y = device_mouse_y_to_gui(0);
 
-    var _restart_button =
+    var _confirm_button =
         get_pause_confirmation_button_bounds(0);
 
     var _cancel_button =
@@ -301,35 +362,84 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
 
 
     // --------------------------------------------------
-    // CONFIRM RESTART
+    // CONFIRM REQUESTED ACTION
     // --------------------------------------------------
 
     if (point_in_rectangle(
         _mouse_x,
         _mouse_y,
-        _restart_button.x,
-        _restart_button.y,
-        _restart_button.x + _restart_button.width,
-        _restart_button.y + _restart_button.height
+        _confirm_button.x,
+        _confirm_button.y,
+        _confirm_button.x + _confirm_button.width,
+        _confirm_button.y + _confirm_button.height
     ))
     {
-        // Close confirmation
+        // Remember the action before clearing dialog state
+        var _action = pause_confirmation_action;
+
+        // Close confirmation and pause overlays
+        screen_manager.close_top_overlay();
         screen_manager.close_top_overlay();
 
-        // Close pause menu
-        screen_manager.close_top_overlay();
-
-        // Prevent the restart click from also activating
-        // a gameplay button created during this frame.
+        // Prevent click-through during navigation
         mouse_clear(mb_left);
 
-        // Restart using the existing campaign initializer
-        start_campaign();
+        // Clear the pending action
+        pause_confirmation_action = "";
+
+
+        // ----------------------------------------------
+        // RESTART CAMPAIGN
+        // ----------------------------------------------
+
+        if (_action == "restart")
+        {
+            start_campaign();
+        }
+
+
+        // ----------------------------------------------
+        // RETURN TO TITLE
+        // ----------------------------------------------
+
+        else if (_action == "title")
+        {
+            // Remove gameplay choice buttons
+            clear_choice_buttons();
+
+            // Remove the reusable Continue button
+            if (instance_exists(continue_button_instance))
+            {
+                instance_destroy(continue_button_instance);
+            }
+
+            continue_button_instance = noone;
+
+            // Require a new difficulty selection
+            // when beginning another campaign
+            selected_campaign_difficulty =
+                CampaignDifficulty.NONE;
+
+            // Navigate to the title without starting
+            // or resetting a new campaign
+            screen_manager.navigate_to(ScreenId.TITLE);
+        }
+		
+			// ----------------------------------------------
+			// QUIT TO DESKTOP
+			// ----------------------------------------------
+
+			else if (_action == "quit")
+			{
+			    // Exit the application after confirmation
+			    game_end();
+			}
+
     }
 
 
     // --------------------------------------------------
-    // CANCEL RESTART
+    // CANCEL REQUESTED ACTION
     // --------------------------------------------------
 
     else if (point_in_rectangle(
@@ -344,8 +454,11 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
         // Close only the confirmation dialog
         screen_manager.close_top_overlay();
 
-        // Consume this mouse click
+        // Consume the click
         mouse_clear(mb_left);
+
+        // Clear the pending action
+        pause_confirmation_action = "";
     }
 }
 

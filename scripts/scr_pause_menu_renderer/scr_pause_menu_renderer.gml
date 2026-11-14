@@ -209,7 +209,8 @@ function get_pause_confirmation_button_bounds(_index)
 }
 
 
-function draw_pause_confirmation_overlay()
+
+function draw_pause_confirmation_overlay(_action)
 {
     // Darken the pause menu behind the dialog
     draw_set_color(c_black);
@@ -256,7 +257,19 @@ function draw_pause_confirmation_overlay()
         false
     );
 
-    var _title = "RESTART CAMPAIGN?";
+    	
+	var _title = "RESTART CAMPAIGN?";
+
+	if (_action == "title")
+	{
+	    _title = "RETURN TO TITLE?";
+	}
+	else if (_action == "quit")
+	{
+	    _title = "QUIT TO DESKTOP?";
+	}
+
+
 
     draw_set_color(c_white);
 
@@ -284,10 +297,23 @@ function draw_pause_confirmation_overlay()
 // CONFIRMATION BUTTONS
 // --------------------------------------------------
 
+var _confirm_label = "RESTART";
+
+if (_action == "title")
+{
+    _confirm_label = "RETURN";
+}
+else if (_action == "quit")
+{
+    _confirm_label = "QUIT";
+}
+
+
 var _labels = [
-    "RESTART",
+    _confirm_label,
     "CANCEL"
 ];
+
 
 for (var _i = 0; _i < array_length(_labels); _i++)
 {

@@ -21,13 +21,6 @@ if (controller.get_campaign_phase() != CampaignPhase.CHOOSING)
     exit;
 }
 
-// Only draw Continue on the gameplay screen
-if (controller.screen_manager.get_current_screen()
-    != ScreenId.GAMEPLAY)
-{
-    exit;
-}
-
 
 // Reject uninitialized buttons
 if (choice_index < 0)

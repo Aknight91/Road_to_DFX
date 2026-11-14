@@ -23,6 +23,11 @@ screen_manager = new ScreenManager(ScreenId.TITLE);
 
 selected_campaign_difficulty = CampaignDifficulty.NONE;
 
+// Tracks the action awaiting player confirmation.
+// Valid actions for now: "restart" and "title".
+
+pause_confirmation_action = "";
+
 
 
 
