@@ -1,6 +1,22 @@
 
 /// @description Decisions, progression, and campaign outcomes
 
+// --------------------------------------------------
+// CAPTURE SCREEN AT START OF FRAME
+// --------------------------------------------------
+
+// Prevent a single input from affecting two screens
+// when navigation occurs during the same Step Event.
+
+var _screen_at_step_start =
+    screen_manager.get_current_screen();
+
+// Capture the overlay active before input is processed.
+// Prevents one click from affecting multiple overlay states.
+
+var _overlay_at_step_start =
+    screen_manager.get_top_overlay();
+
 
 // --------------------------------------------------
 // TITLE SCREEN INPUT
@@ -28,11 +44,16 @@ if (screen_manager.can_receive_input(ScreenId.TITLE))
         );
 
     // Support both mouse and keyboard navigation
-    if (_start_clicked
-    || keyboard_check_pressed(vk_enter))
-    {
-        screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
-    }
+   
+	if (_start_clicked
+	|| keyboard_check_pressed(vk_enter))
+	{
+	    // Each new setup begins without a selected difficulty
+	    selected_campaign_difficulty = CampaignDifficulty.NONE;
+
+	    screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
+	}
+
 }
 
 // --------------------------------------------------
@@ -71,6 +92,262 @@ if (screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP))
     }
 }
 
+// --------------------------------------------------
+// CAMPAIGN DIFFICULTY SELECTION
+// --------------------------------------------------
+
+
+if (_screen_at_step_start == ScreenId.CAMPAIGN_SETUP
+&& screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP)
+&& mouse_check_button_pressed(mb_left))
+
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Get the shared difficulty button layout
+    var _options = get_campaign_setup_difficulty_options();
+
+    // Check each difficulty button
+    for (var _i = 0; _i < array_length(_options); _i++)
+    {
+        var _option = _options[_i];
+
+        if (point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _option.x,
+            _option.y,
+            _option.x + _option.width,
+            _option.y + _option.height
+        ))
+        {
+            // Store the player's explicit selection
+            selected_campaign_difficulty = _option.difficulty;
+
+            // Only one difficulty can be selected
+            break;
+        }
+    }
+}
+
+// --------------------------------------------------
+// BEGIN CAMPAIGN INPUT
+// --------------------------------------------------
+
+// Only accept input if Campaign Setup was active
+// at the beginning of this Step Event.
+
+if (_screen_at_step_start == ScreenId.CAMPAIGN_SETUP
+&& screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP))
+{
+    // A difficulty must be explicitly selected
+    if (selected_campaign_difficulty != CampaignDifficulty.NONE)
+    {
+        // Get shared Begin button geometry
+        var _begin_button = get_campaign_setup_begin_button_bounds();
+
+        // Get mouse position in GUI coordinates
+        var _mouse_x = device_mouse_x_to_gui(0);
+        var _mouse_y = device_mouse_y_to_gui(0);
+
+        // Detect click inside Begin Campaign button
+        if (mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _begin_button.x,
+            _begin_button.y,
+            _begin_button.x + _begin_button.width,
+            _begin_button.y + _begin_button.height
+        ))
+        {
+            // Initialize and enter gameplay
+            start_campaign();
+        }
+    }
+}
+
+
+// --------------------------------------------------
+// TEMPORARY REGRESSION TEST: ENTER GAMEPLAY
+// --------------------------------------------------
+
+// Development-only shortcut.
+// Remove after Campaign Setup can start gameplay normally.
+
+if (screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP)
+&& keyboard_check_pressed(vk_f9))
+{
+    start_campaign();
+}
+
+// --------------------------------------------------
+// PAUSE MENU - ESCAPE KEY INPUT
+// --------------------------------------------------
+
+// Escape controls the pause menu only during gameplay.
+// Before gameplay, existing screen navigation handles Escape.
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& keyboard_check_pressed(vk_escape))
+{
+    var _top_overlay = screen_manager.get_top_overlay();
+
+   
+// Close the confirmation first, if one is open
+if (_top_overlay == OverlayId.CONFIRMATION)
+{
+    screen_manager.close_top_overlay();
+
+    show_debug_message("PAUSE MENU: Confirmation cancelled");
+}
+
+// Otherwise close the pause menu normally
+else if (_top_overlay == OverlayId.PAUSE_MENU)
+{
+    screen_manager.close_top_overlay();
+
+    show_debug_message("PAUSE MENU: Closed");
+}
+
+
+    // Escape opens the pause menu if no overlay is active
+    else if (_top_overlay == noone
+    && screen_manager.can_receive_input(ScreenId.GAMEPLAY))
+    {
+        screen_manager.open_overlay(OverlayId.PAUSE_MENU);
+
+        show_debug_message("PAUSE MENU: Opened");
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RESUME BUTTON INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Resume is the first menu button (index 0)
+    var _resume_button = get_pause_menu_button_bounds(0);
+
+    // Check whether Resume was clicked
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _resume_button.x,
+        _resume_button.y,
+        _resume_button.x + _resume_button.width,
+        _resume_button.y + _resume_button.height
+    ))
+    {
+        // Dismiss the pause overlay
+        screen_manager.close_top_overlay();
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RESTART CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Restart Campaign is menu index 3
+    var _restart_button = get_pause_menu_button_bounds(3);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _restart_button.x,
+        _restart_button.y,
+        _restart_button.x + _restart_button.width,
+        _restart_button.y + _restart_button.height
+    ))
+    {
+        // Open confirmation without changing campaign state
+        screen_manager.open_overlay(OverlayId.CONFIRMATION);
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - CONFIRMATION BUTTON INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.CONFIRMATION
+&& screen_manager.get_top_overlay() == OverlayId.CONFIRMATION
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    var _restart_button =
+        get_pause_confirmation_button_bounds(0);
+
+    var _cancel_button =
+        get_pause_confirmation_button_bounds(1);
+
+
+    // --------------------------------------------------
+    // CONFIRM RESTART
+    // --------------------------------------------------
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _restart_button.x,
+        _restart_button.y,
+        _restart_button.x + _restart_button.width,
+        _restart_button.y + _restart_button.height
+    ))
+    {
+        // Close confirmation
+        screen_manager.close_top_overlay();
+
+        // Close pause menu
+        screen_manager.close_top_overlay();
+
+        // Prevent the restart click from also activating
+        // a gameplay button created during this frame.
+        mouse_clear(mb_left);
+
+        // Restart using the existing campaign initializer
+        start_campaign();
+    }
+
+
+    // --------------------------------------------------
+    // CANCEL RESTART
+    // --------------------------------------------------
+
+    else if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _cancel_button.x,
+        _cancel_button.y,
+        _cancel_button.x + _cancel_button.width,
+        _cancel_button.y + _cancel_button.height
+    ))
+    {
+        // Close only the confirmation dialog
+        screen_manager.close_top_overlay();
+
+        // Consume this mouse click
+        mouse_clear(mb_left);
+    }
+}
 
 
 // Toggle Debug Panel with CTRL + D

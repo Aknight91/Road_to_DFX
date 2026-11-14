@@ -39,6 +39,7 @@
     {"id":{"name":"scr_gameplay_hud","path":"scripts/scr_gameplay_hud/scr_gameplay_hud.yy",},},
     {"id":{"name":"scr_gameplay_review_renderer","path":"scripts/scr_gameplay_review_renderer/scr_gameplay_review_renderer.yy",},},
     {"id":{"name":"scr_gameplay_screen_renderer","path":"scripts/scr_gameplay_screen_renderer/scr_gameplay_screen_renderer.yy",},},
+    {"id":{"name":"scr_pause_menu_renderer","path":"scripts/scr_pause_menu_renderer/scr_pause_menu_renderer.yy",},},
     {"id":{"name":"scr_result_layout","path":"scripts/scr_result_layout/scr_result_layout.yy",},},
     {"id":{"name":"scr_result_scrollbar_renderer","path":"scripts/scr_result_scrollbar_renderer/scr_result_scrollbar_renderer.yy",},},
     {"id":{"name":"scr_result_text_renderer","path":"scripts/scr_result_text_renderer/scr_result_text_renderer.yy",},},

@@ -81,5 +81,87 @@ can_receive_input = function(_screen)
     return true;
 };
 
+// --------------------------------------------------
+// OVERLAY VALIDATION
+// --------------------------------------------------
+
+is_valid_overlay = function(_overlay)
+{
+    return (
+        _overlay == OverlayId.PAUSE_MENU
+        || _overlay == OverlayId.SAVE_LOAD
+        || _overlay == OverlayId.CONFIRMATION
+    );
+};
+
+
+// --------------------------------------------------
+// GET TOP OVERLAY
+// --------------------------------------------------
+
+get_top_overlay = function()
+{
+    var _count = array_length(overlay_stack);
+
+    if (_count == 0)
+    {
+        return noone;
+    }
+
+    return overlay_stack[_count - 1];
+};
+
+
+// --------------------------------------------------
+// OPEN OVERLAY
+// --------------------------------------------------
+
+open_overlay = function(_overlay)
+{
+    // Reject unknown overlays
+    if (!is_valid_overlay(_overlay))
+    {
+        show_debug_message(
+            "SCREEN MANAGER: Invalid overlay requested."
+        );
+
+        return false;
+    }
+
+    // Prevent opening the same overlay twice in a row
+    if (get_top_overlay() == _overlay)
+    {
+        return false;
+    }
+
+    array_push(overlay_stack, _overlay);
+
+    return true;
+};
+
+
+// --------------------------------------------------
+// CLOSE TOP OVERLAY
+// --------------------------------------------------
+
+close_top_overlay = function()
+{
+    var _count = array_length(overlay_stack);
+
+    // Nothing to close
+    if (_count == 0)
+    {
+        return noone;
+    }
+
+    // Remember which overlay is being closed
+    var _closed_overlay = overlay_stack[_count - 1];
+
+    // Remove only the top overlay
+    array_delete(overlay_stack, _count - 1, 1);
+
+    return _closed_overlay;
+};
+
 
 }

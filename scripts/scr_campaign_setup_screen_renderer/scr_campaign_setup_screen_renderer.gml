@@ -124,6 +124,67 @@ for (var _i = 0; _i < array_length(_options); _i++)
 
 }
 
+// --------------------------------------------------
+// BEGIN CAMPAIGN BUTTON
+// --------------------------------------------------
+
+// Get shared button geometry
+var _begin_button = get_campaign_setup_begin_button_bounds();
+
+// Require an explicit difficulty selection
+var _begin_enabled =
+    _selected_difficulty != CampaignDifficulty.NONE;
+
+// Draw button background
+if (_begin_enabled)
+{
+    draw_set_color(make_color_rgb(220, 220, 220));
+}
+else
+{
+    draw_set_color(make_color_rgb(170, 170, 170));
+}
+
+draw_rectangle(
+    _begin_button.x,
+    _begin_button.y,
+    _begin_button.x + _begin_button.width,
+    _begin_button.y + _begin_button.height,
+    false
+);
+
+// Draw button border
+draw_set_color(c_black);
+
+draw_rectangle(
+    _begin_button.x,
+    _begin_button.y,
+    _begin_button.x + _begin_button.width,
+    _begin_button.y + _begin_button.height,
+    true
+);
+
+// Dim the label until a difficulty is selected
+if (_begin_enabled)
+{
+    draw_set_color(c_black);
+}
+else
+{
+    draw_set_color(make_color_rgb(100, 100, 100));
+}
+
+var _begin_label = "BEGIN CAMPAIGN";
+
+// Center the button label
+draw_text(
+    _begin_button.x
+        + (_begin_button.width - string_width(_begin_label)) / 2,
+    _begin_button.y
+        + (_begin_button.height - string_height(_begin_label)) / 2,
+    _begin_label
+);
+
    
 // --------------------------------------------------
 // BACK TO TITLE BUTTON

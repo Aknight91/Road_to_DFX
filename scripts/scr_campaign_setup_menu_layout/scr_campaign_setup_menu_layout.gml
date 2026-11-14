@@ -52,7 +52,21 @@ function get_campaign_setup_difficulty_options()
 function get_campaign_setup_back_button_bounds()
 {
     return {
-        x: 370,
+        x: 490,
+        y: 390,
+        width: 220,
+        height: 44
+    };
+}
+
+ // --------------------------------------------------
+ // BEGIN CAMPAIGN BUTTON GEOMETRY
+ // --------------------------------------------------
+
+function get_campaign_setup_begin_button_bounds()
+{
+    return {
+        x: 250,
         y: 390,
         width: 220,
         height: 44
