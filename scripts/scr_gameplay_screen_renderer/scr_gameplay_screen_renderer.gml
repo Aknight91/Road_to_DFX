@@ -1,4 +1,3 @@
-
 /// @description Coordinate rendering of the gameplay screen
 
 function draw_gameplay_screen(_game)
@@ -43,8 +42,10 @@ function draw_gameplay_screen(_game)
 
         if (_phase != CampaignPhase.FINISHED)
         {
-            // Get current engineering event
-            var _event = design_events[current_event_index];
+            // Read the event through the verified event bridge.
+            // Dynamic encounters are preferred when active;
+            // otherwise the four-event prototype is used.
+            var _event = get_current_campaign_event();
 
             // Draw scenario information
             draw_gameplay_event_header(_event);

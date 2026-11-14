@@ -491,13 +491,17 @@ if (get_campaign_phase() == CampaignPhase.CHOOSING)
  // PROCESS PLAYER DECISIONS (MOUSE)
  // --------------------------------------------------
 
-   
-   
-	if (_choice_index >= 0
-	&& _choice_index < array_length(design_events[current_event_index].choices))
+	// Get the event currently presented to the player
+	var _keyboard_event = get_current_campaign_event();
+
+	// Validate against the current event's choices
+	if (is_struct(_keyboard_event)
+	&& _choice_index >= 0
+	&& _choice_index < array_length(_keyboard_event.choices))
 	{
 	    apply_player_choice(_choice_index);
 	}
+
 
 
 }

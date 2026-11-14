@@ -1,4 +1,5 @@
-
+// Initialize random behavior once at game startup
+randomize();
 // Set the game window to a landscape size
 window_set_size(960, 540);
 
@@ -22,6 +23,193 @@ screen_manager = new ScreenManager(ScreenId.TITLE);
 // The player must make an explicit choice.
 
 selected_campaign_difficulty = CampaignDifficulty.NONE;
+
+// --------------------------------------------------
+// EVENT LIBRARY INITIALIZATION
+// --------------------------------------------------
+
+// Create the stage-based event library
+event_library = create_event_library();
+
+
+// --------------------------------------------------
+// TEMPORARY EVENT LIBRARY DIAGNOSTICS
+// --------------------------------------------------
+
+// Retrieve the PCB Design event pool
+var _pcb_pool = get_event_pool(
+    event_library,
+    EventStage.PCB_DESIGN
+);
+
+// Report the number of registered events
+show_debug_message(
+    "EVENT LIBRARY: PCB Design events = "
+    + string(array_length(_pcb_pool))
+);
+
+// Verify the first event and its choices
+if (array_length(_pcb_pool) > 0)
+{
+    show_debug_message(
+        "EVENT LIBRARY: First event ID = "
+        + _pcb_pool[0].id
+    );
+
+    show_debug_message(
+        "EVENT LIBRARY: Choice count = "
+        + string(array_length(_pcb_pool[0].choices))
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY EVENT ELIGIBILITY TEST
+// --------------------------------------------------
+
+// Test with no previously played events
+var _eligible_new = get_eligible_stage_events(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    []
+);
+
+show_debug_message(
+    "EVENT SELECTOR: New campaign eligible = "
+    + string(array_length(_eligible_new))
+);
+
+
+// Simulate PCB-0001 having already been played
+var _eligible_played = get_eligible_stage_events(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    ["PCB-0001"]
+);
+
+show_debug_message(
+    "EVENT SELECTOR: After PCB-0001 eligible = "
+    + string(array_length(_eligible_played))
+);
+
+// --------------------------------------------------
+// TEMPORARY FLAG ELIGIBILITY TEST
+// --------------------------------------------------
+
+// Create a separate library for testing.
+// The active campaign library remains unchanged.
+var _flag_test_library = create_event_library();
+
+var _flag_test_event =
+    _flag_test_library.pcb_design[0];
+
+// Simulate a follow-up event that requires an
+// unresolved CAD issue and becomes unavailable
+// once that issue has been verified.
+_flag_test_event.required_flags = [
+    "cad_changes_unverified"
+];
+
+_flag_test_event.blocked_flags = [
+    "cad_changes_verified"
+];
+
+// Test 1: Required flag is missing
+var _test_missing = get_eligible_stage_events(
+    _flag_test_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    [],
+    []
+);
+
+// Test 2: Required flag is present
+var _test_matching = get_eligible_stage_events(
+    _flag_test_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    [],
+    ["cad_changes_unverified"]
+);
+
+// Test 3: Required and blocked flags are present
+var _test_blocked = get_eligible_stage_events(
+    _flag_test_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    [],
+    [
+        "cad_changes_unverified",
+        "cad_changes_verified"
+    ]
+);
+
+show_debug_message(
+    "EVENT FLAGS: Missing required = "
+    + string(array_length(_test_missing))
+);
+
+show_debug_message(
+    "EVENT FLAGS: Required present = "
+    + string(array_length(_test_matching))
+);
+
+show_debug_message(
+    "EVENT FLAGS: Blocked condition = "
+    + string(array_length(_test_blocked))
+);
+
+// --------------------------------------------------
+// TEMPORARY WEIGHTED EVENT SELECTION TEST
+// --------------------------------------------------
+
+// Test selection using our registered PCB Design event
+var _weighted_eligible = get_eligible_stage_events(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    [],
+    []
+);
+
+var _weighted_selected = select_weighted_event(
+    _weighted_eligible
+);
+
+if (is_struct(_weighted_selected))
+{
+    show_debug_message(
+        "WEIGHTED SELECTOR: Selected = "
+        + _weighted_selected.id
+    );
+}
+
+// Verify that zero-weight events cannot be selected
+var _weight_test = select_weighted_event([
+    { id: "ZERO", weight: 0 },
+    { id: "VALID", weight: 10 }
+]);
+
+if (is_struct(_weight_test))
+{
+    show_debug_message(
+        "WEIGHTED SELECTOR: Positive weight = "
+        + _weight_test.id
+    );
+}
+
+// Verify that an empty pool is handled safely
+var _empty_selection = select_weighted_event([]);
+
+if (!is_struct(_empty_selection))
+{
+    show_debug_message(
+        "WEIGHTED SELECTOR: Empty pool handled"
+    );
+}
+
+
 
 // Tracks the action awaiting player confirmation.
 // Valid actions for now: "restart" and "title".
@@ -63,6 +251,64 @@ initialize_campaign_stats = function()
 
     // Software instability
     software_instability = 1;
+	
+// --------------------------------------------------
+// APPLY SELECTED CAMPAIGN DIFFICULTY
+// --------------------------------------------------
+
+// NONE returns undefined during initial game setup.
+var _profile = get_campaign_difficulty_profile(
+    selected_campaign_difficulty
+);
+
+// Apply starting conditions only when a valid
+// difficulty has been explicitly selected.
+if (is_struct(_profile))
+{
+    // Player resources
+    engineering_hours = irandom_range(
+        _profile.engineering_hours_min,
+        _profile.engineering_hours_max
+    );
+
+    budget = irandom_range(
+        _profile.budget_min,
+        _profile.budget_max
+    );
+
+    morale = irandom_range(
+        _profile.morale_min,
+        _profile.morale_max
+    );
+
+    // Manufacturing conditions
+    drc_violations = irandom_range(
+        _profile.drc_violations_min,
+        _profile.drc_violations_max
+    );
+
+    manufacturing_risk = irandom_range(
+        _profile.manufacturing_risk_min,
+        _profile.manufacturing_risk_max
+    );
+
+    // DFX starting values
+    dfa = irandom_range(_profile.dfa_min, _profile.dfa_max);
+    dfm = irandom_range(_profile.dfm_min, _profile.dfm_max);
+    dft = irandom_range(_profile.dft_min, _profile.dft_max);
+
+    // Sanity always starts at 100 for every difficulty
+    sanity = _profile.sanity_start;
+
+    // Diagnostic confirmation
+    show_debug_message(
+        "CAMPAIGN: Applied difficulty profile - "
+        + get_campaign_difficulty_name(
+            selected_campaign_difficulty
+        )
+    );
+}
+
 };
 
 
@@ -300,6 +546,38 @@ design_events = [
  {
      // Begin with the first engineering event
      current_event_index = 0;
+	 
+	// --------------------------------------------------
+	// CAMPAIGN EVENT HISTORY AND PROJECT CONDITIONS
+	// --------------------------------------------------
+
+	// Events encountered during this campaign
+	played_event_ids = [];
+
+	// Persistent conditions created by player decisions
+	project_flags = [];
+
+	// Stage and encounter state for the future dynamic campaign
+	// Do not select a new encounter until the stage pools are populated.
+	current_event_stage = EventStage.PLANNING;
+	active_encounter = undefined;
+
+	// Temporary diagnostic: confirms initialization and restart reset
+	show_debug_message(
+	    "CAMPAIGN STATE: Dynamic encounter state initialized"
+	);
+
+	// Temporary initialization diagnostics
+	show_debug_message(
+	    "CAMPAIGN STATE: Played events = "
+	    + string(array_length(played_event_ids))
+	);
+
+	show_debug_message(
+	    "CAMPAIGN STATE: Project flags = "
+	    + string(array_length(project_flags))
+	);
+
 
      // Initial gameplay state
      event_active = true;
@@ -357,6 +635,30 @@ request_continue = function()
      }
 
      return CampaignPhase.CHOOSING;
+ };
+
+
+ // --------------------------------------------------
+ // CURRENT CAMPAIGN EVENT ACCESS
+ // --------------------------------------------------
+
+ // Prefer an active dynamic encounter when available.
+ // Otherwise, preserve the existing four-event prototype.
+ // Returns undefined if neither source has a valid event.
+ get_current_campaign_event = function()
+ {
+     if (is_struct(active_encounter))
+     {
+         return active_encounter;
+     }
+
+     if (current_event_index >= 0
+     && current_event_index < array_length(design_events))
+     {
+         return design_events[current_event_index];
+     }
+
+     return undefined;
  };
 
 
@@ -652,7 +954,7 @@ apply_player_choice = function(_choice_index)
 
 
     
-	var _event = design_events[current_event_index];
+	var _event = get_current_campaign_event();
 
 	// Reject choice indices outside the current event's choices
 	if (_choice_index < 0
@@ -814,10 +1116,10 @@ refresh_choice_buttons = function()
     clear_choice_buttons();
 
 
-    
-    // Calculate button layout using Flex Panels
-    var _choices = design_events[current_event_index].choices;
-    var _region = get_ui_regions().choices;
+   // Calculate button layout using the current campaign event
+var _event = get_current_campaign_event();
+var _choices = _event.choices;
+var _region = get_ui_regions().choices;
 
     var _flex_layout = calculate_choice_layout_flex(
         _choices,
@@ -902,6 +1204,9 @@ start_campaign = function()
     // Reset all campaign-specific data
     initialize_campaign_state();
 
+
+
+
     // Rebuild choice buttons for the first event
     // This also removes the previous choice buttons
     refresh_choice_buttons();
@@ -925,7 +1230,6 @@ start_campaign = function()
 };
 
 
-
 // --------------------------------------------------
 // INITIAL CONTROLLER STATE
 // --------------------------------------------------
@@ -935,3 +1239,250 @@ start_campaign = function()
 
 initialize_campaign_state();
 
+// --------------------------------------------------
+// TEMPORARY STAGE EVENT SELECTION TEST
+// --------------------------------------------------
+
+// Use separate test history and conditions.
+// Do not modify the active campaign state.
+
+var _test_played_ids = [];
+var _test_flags = [];
+
+
+// Test 1: Select our registered PCB Design event
+var _test_first_event = select_next_stage_event(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    _test_played_ids,
+    _test_flags
+);
+
+if (is_struct(_test_first_event))
+{
+    show_debug_message(
+        "STAGE SELECTOR: First event = "
+        + _test_first_event.id
+    );
+
+    // Simulate recording that event as played
+    array_push(
+        _test_played_ids,
+        _test_first_event.id
+    );
+}
+
+
+// Test 2: Confirm the event cannot repeat
+var _test_second_event = select_next_stage_event(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    _test_played_ids,
+    _test_flags
+);
+
+if (!is_struct(_test_second_event))
+{
+    show_debug_message(
+        "STAGE SELECTOR: Played event excluded"
+    );
+}
+
+
+// Test 3: Confirm empty stage pools are safe
+var _test_empty_stage = select_next_stage_event(
+    event_library,
+    EventStage.FABRICATION,
+    CampaignDifficulty.MEDIUM,
+    _test_played_ids,
+    _test_flags
+);
+
+if (!is_struct(_test_empty_stage))
+{
+    show_debug_message(
+        "STAGE SELECTOR: Empty stage handled"
+    );
+}
+
+
+// --------------------------------------------------
+// TEMPORARY CHOICE RANDOMIZATION TEST
+// --------------------------------------------------
+
+// Retrieve the permanent event definition
+var _source_event = event_library.pcb_design[0];
+
+// Create an independent, shuffled encounter
+var _test_encounter = prepare_event_encounter(
+    _source_event
+);
+
+// Display original first choice
+show_debug_message(
+    "CHOICE TEST: Original first = "
+    + _source_event.choices[0].id
+);
+
+// Display shuffled choices and associated costs
+for (
+    var _i = 0;
+    _i < array_length(_test_encounter.choices);
+    _i++
+)
+{
+    var _choice = _test_encounter.choices[_i];
+
+    show_debug_message(
+        "CHOICE TEST: Position "
+        + string(_i + 1)
+        + " = "
+        + _choice.id
+        + " | Hours = "
+        + string(_choice.hours_cost)
+    );
+}
+
+// Confirm the permanent library is unchanged
+show_debug_message(
+    "CHOICE TEST: Original still first = "
+    + _source_event.choices[0].id
+);
+
+
+// --------------------------------------------------
+// TEMPORARY COMPLETE ENCOUNTER PIPELINE TEST
+// --------------------------------------------------
+
+// Independent test history and conditions
+var _pipeline_played = [];
+var _pipeline_flags = [];
+
+// Select and prepare the first encounter
+var _pipeline_event = select_and_prepare_stage_encounter(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    _pipeline_played,
+    _pipeline_flags
+);
+
+if (is_struct(_pipeline_event))
+{
+    show_debug_message(
+        "ENCOUNTER PIPELINE: Selected = "
+        + _pipeline_event.id
+    );
+
+    show_debug_message(
+        "ENCOUNTER PIPELINE: Choices = "
+        + string(array_length(_pipeline_event.choices))
+    );
+
+    // Simulate recording the event as played
+    array_push(
+        _pipeline_played,
+        _pipeline_event.id
+    );
+}
+
+// Check that the same event cannot be selected again
+var _pipeline_next = select_and_prepare_stage_encounter(
+    event_library,
+    EventStage.PCB_DESIGN,
+    CampaignDifficulty.MEDIUM,
+    _pipeline_played,
+    _pipeline_flags
+);
+
+if (!is_struct(_pipeline_next))
+{
+    show_debug_message(
+        "ENCOUNTER PIPELINE: No repeat available"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY CAMPAIGN ENCOUNTER SESSION TEST
+// STEP 58, PART 2I
+// --------------------------------------------------
+
+// Test using an independent session object, not obj_game state.
+var _session_test = {
+    event_library: event_library,
+    current_event_stage: EventStage.PCB_DESIGN,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: [],
+    active_encounter: undefined
+};
+
+var _session_started = begin_campaign_encounter(_session_test);
+
+if (_session_started && is_struct(_session_test.active_encounter))
+{
+    show_debug_message(
+        "SESSION TEST: Active encounter = "
+        + _session_test.active_encounter.id
+    );
+
+    show_debug_message(
+        "SESSION TEST: Played count = "
+        + string(array_length(_session_test.played_event_ids))
+    );
+}
+else
+{
+    show_debug_message("SESSION TEST: Failed to begin encounter");
+}
+
+var _session_repeated = begin_campaign_encounter(_session_test);
+
+if (!_session_repeated)
+{
+    show_debug_message("SESSION TEST: Repeat prevented");
+}
+
+show_debug_message(
+    "SESSION TEST: Real campaign played count = "
+    + string(array_length(played_event_ids))
+);
+
+// --------------------------------------------------
+// TEMPORARY EVENT BRIDGE DIAGNOSTICS
+// STEP 58, PART 2J
+// --------------------------------------------------
+
+// Confirm that normal gameplay still uses the legacy event.
+var _bridge_legacy_event = get_current_campaign_event();
+
+if (is_struct(_bridge_legacy_event))
+{
+    show_debug_message(
+        "EVENT BRIDGE: Legacy = " + _bridge_legacy_event.title
+    );
+}
+
+// Temporarily supply a prepared encounter for this test.
+var _bridge_original_encounter = active_encounter;
+active_encounter = prepare_event_encounter(event_library.pcb_design[0]);
+
+var _bridge_dynamic_event = get_current_campaign_event();
+
+if (is_struct(_bridge_dynamic_event))
+{
+    show_debug_message(
+        "EVENT BRIDGE: Dynamic = " + _bridge_dynamic_event.id
+    );
+}
+
+// Restore the original state before the first Step Event.
+active_encounter = _bridge_original_encounter;
+
+if (!is_struct(active_encounter)
+&& is_struct(get_current_campaign_event()))
+{
+    show_debug_message("EVENT BRIDGE: Legacy restored");
+}
