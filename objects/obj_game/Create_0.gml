@@ -1956,6 +1956,228 @@ else
     );
 }
 
+ // --------------------------------------------------
+ // FINALIZE DYNAMIC CAMPAIGN
+ // --------------------------------------------------
+
+ // Completes a dynamic campaign only after all
+ // scheduled encounters and checkpoints are finished.
+ //
+ // Returns true when the campaign was finalized.
+ // Returns false when finalization is not permitted.
+
+ finalize_dynamic_campaign = function(
+     _campaign,
+     _overdue_workdays
+ )
+ {
+     // Prevent premature or repeated finalization.
+     if (!_campaign.event_active
+     || !_campaign.event_resolved
+     || _campaign.campaign_complete
+     || _campaign.campaign_failed
+     || !is_dynamic_campaign_release_ready(_campaign))
+     {
+         return false;
+     }
+
+     // Evaluate the existing release requirements.
+     var _outcome = evaluate_release_outcome(
+         _campaign.dfa,
+         _campaign.dfm,
+         _campaign.dft,
+         _campaign.sanity,
+         _overdue_workdays
+     );
+
+     // Reset the outcome flags.
+     _campaign.campaign_complete = false;
+     _campaign.campaign_failed = false;
+     _campaign.campaign_half_victory = false;
+     _campaign.failure_reason = "";
+
+     switch (_outcome)
+     {
+         case CampaignOutcome.VICTORY:
+
+             _campaign.campaign_complete = true;
+             _campaign.game_message =
+                 "DESIGN RELEASE APPROVED!";
+
+             _campaign.result_message =
+                 "Congratulations! All DFX release "
+                 + "requirements were met.";
+
+             break;
+
+         case CampaignOutcome.HALF_VICTORY:
+
+             _campaign.campaign_complete = true;
+             _campaign.campaign_half_victory = true;
+
+             _campaign.game_message =
+                 "DESIGN RELEASED - HALF VICTORY!";
+
+             _campaign.result_message =
+                 "The design met all DFX release requirements. "
+                 + "However, the project was delivered late "
+                 + "and the engineer was terminated.";
+
+             break;
+
+         case CampaignOutcome.FAILURE:
+
+             _campaign.campaign_failed = true;
+             _campaign.game_message = "PROJECT FAILURE!";
+
+             if (_campaign.dfa < required_dfa)
+             {
+                 _campaign.failure_reason +=
+                     "ASSEMBLY FAILURE: DFA below release requirement.\n";
+             }
+
+             if (_campaign.dfm < required_dfm)
+             {
+                 _campaign.failure_reason +=
+                     "MANUFACTURING FAILURE: DFM below release requirement.\n";
+             }
+
+             if (_campaign.dft < required_dft)
+             {
+                 _campaign.failure_reason +=
+                     "TEST FAILURE: DFT below release requirement.\n";
+             }
+
+             if (_campaign.sanity < required_sanity
+             && _overdue_workdays <= 0)
+             {
+                 _campaign.failure_reason +=
+                     "SANITY FAILURE: Release requirements not met.\n";
+             }
+
+             _campaign.result_message =
+                 _campaign.failure_reason;
+
+             break;
+
+         default:
+             return false;
+     }
+
+     // End gameplay and clear the active encounter.
+     _campaign.event_active = false;
+     _campaign.active_encounter = undefined;
+
+     return true;
+ };
+
+
+ // --------------------------------------------------
+ // TEMPORARY DYNAMIC FINALIZATION REGRESSION TEST
+ // --------------------------------------------------
+
+ // Create independent campaign test data.
+ var _finalize_targets = get_campaign_stage_targets(30);
+
+ var _finalize_base = {
+     current_event_stage: EventStage.RELEASE,
+     campaign_stage_targets: _finalize_targets,
+     campaign_stage_events_completed: array_create(5, 0),
+     campaign_event_target: 30,
+     campaign_events_completed: 30,
+     completed_checkpoint_ids: [
+         "PLC-REVIEW-001",
+         "RTE-REVIEW-001",
+         "REL-SIGNOFF-001"
+     ],
+     event_active: true,
+     event_resolved: true,
+     campaign_complete: false,
+     campaign_failed: false,
+     campaign_half_victory: false,
+     dfa: 50,
+     dfm: 50,
+     dft: 50,
+     sanity: 80,
+     failure_reason: "",
+     game_message: "",
+     result_message: "",
+     active_encounter: undefined
+ };
+
+ // Simulate all five stages being completed.
+ for (var _fi = 0; _fi < 5; _fi++)
+ {
+     _finalize_base.campaign_stage_events_completed[_fi] =
+         _finalize_targets[_fi];
+ }
+
+ // TEST 1: Missing signoff blocks finalization.
+ var _finalize_blocked = variable_clone(_finalize_base);
+
+ _finalize_blocked.completed_checkpoint_ids = [
+     "PLC-REVIEW-001",
+     "RTE-REVIEW-001"
+ ];
+
+ var _finalize_block_ok =
+     !finalize_dynamic_campaign(_finalize_blocked, 0)
+     && _finalize_blocked.event_active
+     && !_finalize_blocked.campaign_complete;
+
+ // TEST 2: Full victory.
+ var _finalize_full = variable_clone(_finalize_base);
+
+ var _finalize_full_ok =
+     finalize_dynamic_campaign(_finalize_full, 0)
+     && _finalize_full.campaign_complete
+     && !_finalize_full.campaign_failed
+     && !_finalize_full.campaign_half_victory
+     && !_finalize_full.event_active;
+
+ // TEST 3: Finished campaigns cannot finalize twice.
+ var _finalize_repeat_ok =
+     !finalize_dynamic_campaign(_finalize_full, 0);
+
+ // TEST 4: Late release at zero sanity.
+ var _finalize_half = variable_clone(_finalize_base);
+ _finalize_half.sanity = 0;
+
+ var _finalize_half_ok =
+     finalize_dynamic_campaign(_finalize_half, 2)
+     && _finalize_half.campaign_complete
+     && _finalize_half.campaign_half_victory
+     && !_finalize_half.campaign_failed;
+
+ // TEST 5: DFX failure takes precedence.
+ var _finalize_failed = variable_clone(_finalize_base);
+ _finalize_failed.dft = 49;
+ _finalize_failed.sanity = 0;
+
+ var _finalize_failure_ok =
+     finalize_dynamic_campaign(_finalize_failed, 2)
+     && _finalize_failed.campaign_failed
+     && !_finalize_failed.campaign_complete;
+
+ // Final validation.
+ if (_finalize_block_ok
+ && _finalize_full_ok
+ && _finalize_repeat_ok
+ && _finalize_half_ok
+ && _finalize_failure_ok)
+ {
+     show_debug_message(
+         "DYNAMIC FINALIZATION: All tests = PASS"
+     );
+ }
+ else
+ {
+     show_debug_message(
+         "DYNAMIC FINALIZATION: Tests FAILED"
+     );
+ }
+
+
 // --------------------------------------------------
 // CAMPAIGN MESSAGE INITIALIZATION
 // --------------------------------------------------

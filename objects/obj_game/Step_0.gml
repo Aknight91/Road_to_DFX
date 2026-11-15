@@ -516,7 +516,6 @@ if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
     }
 }
 
-
 // --------------------------------------------------
 // PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
 // --------------------------------------------------
@@ -745,103 +744,108 @@ if (is_struct(active_encounter))
         // attempting to select another one.
         active_encounter = undefined;
 		
-// --------------------------------------------------
-// AUTOMATIC ENGINEERING STAGE PROGRESSION
-// --------------------------------------------------
 
-// A stage advances only after its scheduled
-// encounter target has been completed.
-//
-// Consequence interruptions do not contribute
-// to these stage completion totals.
+        // --------------------------------------------------
+        // AUTOMATIC ENGINEERING STAGE PROGRESSION
+        // --------------------------------------------------
 
-if (is_dynamic_stage_complete(id))
-{
-    var _completed_stage = current_event_stage;
+        // A stage advances only after its scheduled target
+        // has been completed. Consequences do not count.
+        var _dynamic_finalized = false;
 
-    // Release is the final engineering stage.
-    if (_completed_stage < EventStage.RELEASE)
-    {
-        // This function also enforces mandatory
-        // Placement and Routing reviews.
-        if (advance_dynamic_campaign_stage(id))
+        if (is_dynamic_stage_complete(id))
         {
-            show_debug_message(
-                "DYNAMIC STAGE: Advanced from "
-                + string(_completed_stage)
-                + " to "
-                + string(current_event_stage)
-            );
-        }
-        else
-        {
-            show_debug_message(
-                "DYNAMIC STAGE: Advancement blocked"
-            );
-        }
-    }
-    else
-    {
-        // All scheduled Release encounters are done.
-        // Check whether final evaluation is permitted.
-        if (is_dynamic_campaign_release_ready(id))
-        {
-            show_debug_message(
-                "DYNAMIC STAGE: Final release ready"
-            );
-        }
-        else
-        {
-            show_debug_message(
-                "DYNAMIC STAGE: Final release blocked"
-            );
-        }
-    }
-}
+            var _completed_stage = current_event_stage;
 
-        // ------------------------------------------
-        // AUTOMATIC DYNAMIC EVENT SELECTION
-        // ------------------------------------------
+            if (_completed_stage < EventStage.RELEASE)
+            {
+                // Enforce stage targets and required reviews.
+                if (advance_dynamic_campaign_stage(id))
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Advanced from "
+                        + string(_completed_stage)
+                        + " to "
+                        + string(current_event_stage)
+                    );
+                }
+                else
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Advancement blocked"
+                    );
+                }
+            }
+            else
+            {
+                // Release is the last engineering stage.
+                if (is_dynamic_campaign_release_ready(id))
+                {
+                    _dynamic_finalized = finalize_dynamic_campaign(
+                        id,
+                        get_overdue_workdays()
+                    );
 
-        if (begin_scheduled_campaign_encounter(id))
-        {
-            // Another eligible dynamic event exists.
-            // Keep the current engineering stage.
-
-            show_debug_message(
-                "DYNAMIC PREVIEW: Next event = "
-                + active_encounter.id
-            );
-        }
-        else
-        {
-            // No eligible dynamic event is available.
-            // Return to the existing prototype.
-
-            current_event_stage = EventStage.DESIGN_SETUP;
-
-            show_debug_message(
-                "DYNAMIC PREVIEW: No further events available"
-            );
-
-            show_debug_message(
-                "DYNAMIC PREVIEW: Returning to prototype"
-            );
+                    if (_dynamic_finalized)
+                    {
+                        show_debug_message(
+                            "DYNAMIC STAGE: Final release evaluated"
+                        );
+                    }
+                    else
+                    {
+                        show_debug_message(
+                            "DYNAMIC STAGE: Finalization rejected"
+                        );
+                    }
+                }
+                else
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Final release blocked"
+                    );
+                }
+            }
         }
 
-        // Return gameplay to the CHOOSING phase
-        event_resolved = false;
+        // --------------------------------------------------
+        // SELECT NEXT EVENT ONLY IF CAMPAIGN IS NOT FINISHED
+        // --------------------------------------------------
 
-        // Clear the previous encounter's messages
-        game_message = "";
-        result_message = "";
+        if (!_dynamic_finalized)
+        {
+            if (begin_scheduled_campaign_encounter(id))
+            {
+                show_debug_message(
+                    "DYNAMIC PREVIEW: Next event = "
+                    + active_encounter.id
+                );
+            }
+            else
+            {
+                // Retain the existing prototype fallback
+                // until the dynamic event pools are complete.
+                current_event_stage = EventStage.DESIGN_SETUP;
 
-        // Reset the results display
-        reset_result_scroll_state();
+                show_debug_message(
+                    "DYNAMIC PREVIEW: No further events available"
+                );
 
-        // Rebuild buttons for whichever event
-        // is now active.
-        refresh_choice_buttons();
+                show_debug_message(
+                    "DYNAMIC PREVIEW: Returning to prototype"
+                );
+            }
+
+            event_resolved = false;
+            game_message = "";
+            result_message = "";
+            reset_result_scroll_state();
+            refresh_choice_buttons();
+        }
+
+        // On finalization, leave event_active false so the
+        // existing FINISHED-phase UI and cleanup will run.
+
     }
     else
     {
