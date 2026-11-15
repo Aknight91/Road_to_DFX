@@ -28,8 +28,9 @@ function create_event_library()
 {
     var _pcb_events = create_pcb_design_event_pool();
 
-    var _routing_events = [];
-    var _manufacturer_events = [];
+    var _design_setup_events = [];
+	var _routing_events = [];
+	var _manufacturer_events = [];
 
     // Organize each event by its engineering stage.
     for (
@@ -42,7 +43,11 @@ function create_event_library()
 
         switch (_event.stage)
         {
-            case EventStage.ROUTING:
+			case EventStage.DESIGN_SETUP:
+			array_push(_design_setup_events, _event);
+			break;
+            
+			case EventStage.ROUTING:
                 array_push(_routing_events, _event);
                 break;
 
@@ -53,7 +58,7 @@ function create_event_library()
     }
 
     return {
-        design_setup: [],
+        design_setup: _design_setup_events,
         placement: [],
         routing: _routing_events,
         manufacturer_review: _manufacturer_events,

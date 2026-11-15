@@ -488,8 +488,8 @@ if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
     // Save the current stage in case selection fails.
     var _previous_stage = current_event_stage;
 
-    // Routing currently contains our first dynamic event.
-    current_event_stage = EventStage.ROUTING;
+    // Preview the first Design Setup event.
+	current_event_stage = EventStage.DESIGN_SETUP;
 
     if (begin_scheduled_campaign_encounter(id))
     {

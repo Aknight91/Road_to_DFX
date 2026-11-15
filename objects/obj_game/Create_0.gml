@@ -2684,27 +2684,34 @@ continue_button_instance = noone;
 
 
 // Create or rebuild buttons for the current event
+
 refresh_choice_buttons = function()
 {
-   
     // Remove previously created buttons
     clear_choice_buttons();
 
+    // --------------------------------------------------
+    // GET CURRENT EVENT
+    // --------------------------------------------------
 
-   // Calculate button layout using the current campaign event
-var _event = get_current_campaign_event();
-var _choices = _event.choices;
-var _region = get_ui_regions().choices;
+    var _event = get_current_campaign_event();
+    var _choices = _event.choices;
+
+    // Calculate the choice region using the
+    // current event's description height.
+    var _region = get_ui_regions(_event).choices;
+
+    // --------------------------------------------------
+    // CALCULATE FLEX PANEL LAYOUT
+    // --------------------------------------------------
 
     var _flex_layout = calculate_choice_layout_flex(
         _choices,
         _region
     );
 
-    // Use calculated rectangles for our button instances
     var _layout = _flex_layout.buttons;
 
-    // Report layouts that exceed the choice region
     if (_flex_layout.overflow)
     {
         show_debug_message(
@@ -2712,9 +2719,15 @@ var _region = get_ui_regions().choices;
         );
     }
 
+    // --------------------------------------------------
+    // CREATE CHOICE BUTTONS
+    // --------------------------------------------------
 
-    // Create one reusable button per choice
-    for (var _i = 0; _i < array_length(_layout); _i++)
+    for (
+        var _i = 0;
+        _i < array_length(_layout);
+        _i++
+    )
     {
         var _bounds = _layout[_i];
 
@@ -2725,15 +2738,14 @@ var _region = get_ui_regions().choices;
             obj_choice_button
         );
 
-        // Connect button to the game controller
+        // Connect to game controller
         _button.controller = id;
         _button.choice_index = _i;
-		
-		
-		// Supply the button's display text
-		_button.choice_label =
-		    string(_i + 1) + ". " + _choices[_i].text;
 
+        // Assign shuffled choice label
+        _button.choice_label =
+            string(_i + 1) + ". "
+            + _choices[_i].text;
 
         // Apply calculated position and dimensions
         _button.button_x = _bounds.x;
@@ -2741,10 +2753,11 @@ var _region = get_ui_regions().choices;
         _button.button_width = _bounds.width;
         _button.button_height = _bounds.height;
 
-        // Track this instance for later cleanup
+        // Track for future cleanup
         array_push(choice_button_instances, _button);
     }
 };
+
 		
 		// --------------------------------------------------
 		// CENTRALIZED CAMPAIGN STATE INITIALIZATION
