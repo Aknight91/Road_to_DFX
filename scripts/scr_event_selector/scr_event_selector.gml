@@ -198,3 +198,104 @@ function select_next_stage_event(
     // Select one event using its relative weight
     return select_weighted_event(_eligible);
 }
+
+// --------------------------------------------------
+// SELECT A SCHEDULED STAGE EVENT
+// --------------------------------------------------
+
+// Selects an eligible event while reserving mandatory
+// stage checkpoints for their scheduled final slot.
+//
+// Returns undefined if no valid event is available.
+// Does not change campaign state or event history.
+
+function select_scheduled_stage_event(_campaign)
+{
+    var _stage = _campaign.current_event_stage;
+    var _targets = _campaign.campaign_stage_targets;
+    var _completed = _campaign.campaign_stage_events_completed;
+
+    // Reject invalid schedule data
+    if (!is_array(_targets) || !is_array(_completed))
+    {
+        return undefined;
+    }
+
+    if (_stage < EventStage.DESIGN_SETUP
+    || _stage > EventStage.RELEASE
+    || _stage >= array_length(_targets)
+    || _stage >= array_length(_completed))
+    {
+        return undefined;
+    }
+
+    // Do not select events beyond the stage target
+    if (_targets[_stage] < 1
+    || _completed[_stage] < 0
+    || _completed[_stage] >= _targets[_stage])
+    {
+        return undefined;
+    }
+
+    // Determine whether a mandatory review is due
+    var _checkpoint_id = get_due_stage_checkpoint_id(
+        _campaign
+    );
+
+    // Apply the existing eligibility rules
+    var _eligible = get_eligible_stage_events(
+        _campaign.event_library,
+        _stage,
+        _campaign.selected_campaign_difficulty,
+        _campaign.played_event_ids,
+        _campaign.project_flags
+    );
+
+    // ----------------------------------------------
+    // MANDATORY CHECKPOINT SELECTION
+    // ----------------------------------------------
+
+    if (_checkpoint_id != "")
+    {
+        for (var _i = 0; _i < array_length(_eligible); _i++)
+        {
+            if (_eligible[_i].id == _checkpoint_id)
+            {
+                return _eligible[_i];
+            }
+        }
+
+        // Never replace a missing mandatory checkpoint
+        // with a random engineering event.
+        show_debug_message(
+            "CHECKPOINT SELECTOR: Missing or ineligible "
+            + _checkpoint_id
+        );
+
+        return undefined;
+    }
+
+    // ----------------------------------------------
+    // ORDINARY EVENT SELECTION
+    // ----------------------------------------------
+
+    var _regular_events = [];
+
+    for (var _j = 0; _j < array_length(_eligible); _j++)
+    {
+        var _candidate = _eligible[_j];
+
+        // Mandatory checkpoints cannot appear early.
+        if (_candidate.id == "PLC-REVIEW-001"
+        || _candidate.id == "RTE-REVIEW-001"
+        || _candidate.id == "REL-SIGNOFF-001")
+        {
+            continue;
+        }
+
+        array_push(_regular_events, _candidate);
+    }
+
+    // Preserve existing weighted random selection
+    return select_weighted_event(_regular_events);
+}

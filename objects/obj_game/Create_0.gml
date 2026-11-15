@@ -31,6 +31,676 @@ selected_campaign_difficulty = CampaignDifficulty.NONE;
 // Create the stage-based event library
 event_library = create_event_library();
 
+// --------------------------------------------------
+// TEMPORARY CHECKPOINT COMPLETION RECORD TEST
+// --------------------------------------------------
+
+var _cp_record_test = {
+    active_encounter: {
+        id: "RTE-REVIEW-001",
+        stage: EventStage.ROUTING
+    },
+    event_resolved: false,
+    campaign_events_completed: 0,
+    campaign_stage_events_completed: array_create(5, 0),
+    completed_checkpoint_ids: []
+};
+
+// Unresolved review cannot count as completed
+var _cp_unresolved_ok =
+    !record_completed_dynamic_encounter(_cp_record_test)
+    && array_length(
+        _cp_record_test.completed_checkpoint_ids
+    ) == 0;
+
+// Resolve and record the review
+_cp_record_test.event_resolved = true;
+
+var _cp_recorded =
+    record_completed_dynamic_encounter(_cp_record_test);
+
+var _cp_recorded_ok =
+    _cp_recorded
+    && array_length(
+        _cp_record_test.completed_checkpoint_ids
+    ) == 1
+    && array_contains(
+        _cp_record_test.completed_checkpoint_ids,
+        "RTE-REVIEW-001"
+    )
+    && _cp_record_test.campaign_events_completed == 1;
+
+// Repeated completion must not count twice
+var _cp_duplicate_ok =
+    !record_completed_dynamic_encounter(_cp_record_test)
+    && array_length(
+        _cp_record_test.completed_checkpoint_ids
+    ) == 1;
+
+// Final validation
+if (_cp_unresolved_ok
+&& _cp_recorded_ok
+&& _cp_duplicate_ok)
+{
+    show_debug_message(
+        "CHECKPOINT COMPLETION: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CHECKPOINT COMPLETION: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY SCHEDULED ENCOUNTER PIPELINE TEST
+// --------------------------------------------------
+
+// Create an independent event library
+var _pipe_library = create_event_library();
+var _pipe_pool = _pipe_library.routing;
+
+// Create a temporary Routing Review
+var _pipe_review = variable_clone(_pipe_pool[0]);
+
+_pipe_review.id = "RTE-REVIEW-001";
+_pipe_review.category = EventCategory.MILESTONE;
+
+array_push(_pipe_pool, _pipe_review);
+
+_pipe_library.routing = _pipe_pool;
+
+// Create an independent test campaign
+var _pipe_session = {
+    event_library: _pipe_library,
+    current_event_stage: EventStage.ROUTING,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: [],
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0),
+    active_encounter: undefined
+};
+
+// TEST 1: Ordinary encounter begins successfully
+var _pipe_normal_started =
+    begin_scheduled_campaign_encounter(_pipe_session);
+
+var _pipe_normal_ok = false;
+
+if (_pipe_normal_started
+&& is_struct(_pipe_session.active_encounter))
+{
+    _pipe_normal_ok =
+        _pipe_session.active_encounter.id == "PCB-0001"
+        && array_length(_pipe_session.active_encounter.choices) == 4
+        && array_length(_pipe_session.played_event_ids) == 1;
+}
+
+// TEST 2: Cannot overwrite an active encounter
+var _pipe_overwrite_rejected =
+    !begin_scheduled_campaign_encounter(_pipe_session)
+    && array_length(_pipe_session.played_event_ids) == 1;
+
+// Clear the encounter for the next independent test
+_pipe_session.active_encounter = undefined;
+
+// Simulate reaching the final Routing slot
+_pipe_session.campaign_stage_events_completed[
+    EventStage.ROUTING
+] = _pipe_session.campaign_stage_targets[
+    EventStage.ROUTING
+] - 1;
+
+// TEST 3: Required checkpoint begins successfully
+var _pipe_review_started =
+    begin_scheduled_campaign_encounter(_pipe_session);
+
+var _pipe_review_ok = false;
+
+if (_pipe_review_started
+&& is_struct(_pipe_session.active_encounter))
+{
+    _pipe_review_ok =
+        _pipe_session.active_encounter.id == "RTE-REVIEW-001"
+        && array_length(_pipe_session.active_encounter.choices) == 4
+        && array_length(_pipe_session.played_event_ids) == 2;
+}
+
+// TEST 4: No encounter beyond the completed stage
+_pipe_session.active_encounter = undefined;
+
+_pipe_session.campaign_stage_events_completed[
+    EventStage.ROUTING
+] += 1;
+
+var _pipe_stage_limit_ok =
+    !begin_scheduled_campaign_encounter(_pipe_session)
+    && !is_struct(_pipe_session.active_encounter)
+    && array_length(_pipe_session.played_event_ids) == 2;
+
+// Final validation
+if (_pipe_normal_ok
+&& _pipe_overwrite_rejected
+&& _pipe_review_ok
+&& _pipe_stage_limit_ok)
+{
+    show_debug_message(
+        "CHECKPOINT PIPELINE: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CHECKPOINT PIPELINE: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY CHECKPOINT SELECTION TEST
+// --------------------------------------------------
+
+// Create an independent library for testing.
+var _cp_sel_library = create_event_library();
+var _cp_sel_pool = _cp_sel_library.routing;
+
+// Create a temporary Routing Review from the
+// existing test event. The real library is unchanged.
+var _cp_sel_review = variable_clone(_cp_sel_pool[0]);
+
+_cp_sel_review.id = "RTE-REVIEW-001";
+_cp_sel_review.category = EventCategory.MILESTONE;
+
+array_push(_cp_sel_pool, _cp_sel_review);
+_cp_sel_library.routing = _cp_sel_pool;
+
+// Independent test campaign
+var _cp_sel_session = {
+    event_library: _cp_sel_library,
+    current_event_stage: EventStage.ROUTING,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: [],
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// Test 1: Ordinary encounter selected before review
+var _cp_sel_normal = select_scheduled_stage_event(
+    _cp_sel_session
+);
+
+var _cp_sel_normal_ok = (
+    is_struct(_cp_sel_normal)
+    && _cp_sel_normal.id == "PCB-0001"
+);
+
+// Test 2: Mandatory review selected in final slot
+_cp_sel_session.campaign_stage_events_completed[
+    EventStage.ROUTING
+] = _cp_sel_session.campaign_stage_targets[
+    EventStage.ROUTING
+] - 1;
+
+var _cp_sel_due = select_scheduled_stage_event(
+    _cp_sel_session
+);
+
+var _cp_sel_due_ok = (
+    is_struct(_cp_sel_due)
+    && _cp_sel_due.id == "RTE-REVIEW-001"
+);
+
+// Test 3: Missing review cannot be replaced
+_cp_sel_session.event_library = create_event_library();
+
+var _cp_sel_missing = select_scheduled_stage_event(
+    _cp_sel_session
+);
+
+var _cp_sel_missing_ok = !is_struct(_cp_sel_missing);
+
+// Test 4: Already-played review cannot be repeated
+_cp_sel_session.event_library = _cp_sel_library;
+_cp_sel_session.played_event_ids = ["RTE-REVIEW-001"];
+
+var _cp_sel_repeat = select_scheduled_stage_event(
+    _cp_sel_session
+);
+
+var _cp_sel_repeat_ok = !is_struct(_cp_sel_repeat);
+
+// Test 5: No additional event after stage completion
+_cp_sel_session.played_event_ids = [];
+
+_cp_sel_session.campaign_stage_events_completed[
+    EventStage.ROUTING
+] += 1;
+
+var _cp_sel_finished = select_scheduled_stage_event(
+    _cp_sel_session
+);
+
+var _cp_sel_finished_ok = !is_struct(_cp_sel_finished);
+
+// Final validation
+if (_cp_sel_normal_ok
+&& _cp_sel_due_ok
+&& _cp_sel_missing_ok
+&& _cp_sel_repeat_ok
+&& _cp_sel_finished_ok)
+{
+    show_debug_message(
+        "CHECKPOINT SELECTOR: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CHECKPOINT SELECTOR: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY MANDATORY CHECKPOINT TEST
+// --------------------------------------------------
+
+var _checkpoint_test = {
+    current_event_stage: EventStage.PLACEMENT,
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// Test 1: No checkpoint at the start of Placement
+var _cp_early = (
+    get_due_stage_checkpoint_id(_checkpoint_test) == ""
+);
+
+// Test 2: Placement Review occupies the final slot
+_checkpoint_test.campaign_stage_events_completed[
+    EventStage.PLACEMENT
+] = _checkpoint_test.campaign_stage_targets[
+    EventStage.PLACEMENT
+] - 1;
+
+var _cp_placement = (
+    get_due_stage_checkpoint_id(_checkpoint_test)
+    == "PLC-REVIEW-001"
+);
+
+// Test 3: Checkpoint no longer due after completion
+_checkpoint_test.campaign_stage_events_completed[
+    EventStage.PLACEMENT
+] += 1;
+
+var _cp_finished = (
+    get_due_stage_checkpoint_id(_checkpoint_test) == ""
+);
+
+// Test 4: Routing Review
+_checkpoint_test.current_event_stage = EventStage.ROUTING;
+
+_checkpoint_test.campaign_stage_events_completed[
+    EventStage.ROUTING
+] = _checkpoint_test.campaign_stage_targets[
+    EventStage.ROUTING
+] - 1;
+
+var _cp_routing = (
+    get_due_stage_checkpoint_id(_checkpoint_test)
+    == "RTE-REVIEW-001"
+);
+
+// Test 5: Final Design Release
+_checkpoint_test.current_event_stage = EventStage.RELEASE;
+
+_checkpoint_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] = _checkpoint_test.campaign_stage_targets[
+    EventStage.RELEASE
+] - 1;
+
+var _cp_release = (
+    get_due_stage_checkpoint_id(_checkpoint_test)
+    == "REL-SIGNOFF-001"
+);
+
+// Test 6: Manufacturer Review has no mandatory slot
+_checkpoint_test.current_event_stage =
+    EventStage.MANUFACTURER_REVIEW;
+
+var _cp_no_review = (
+    get_due_stage_checkpoint_id(_checkpoint_test) == ""
+);
+
+// Final validation
+if (_cp_early
+&& _cp_placement
+&& _cp_finished
+&& _cp_routing
+&& _cp_release
+&& _cp_no_review)
+{
+    show_debug_message(
+        "CHECKPOINT SCHEDULE: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CHECKPOINT SCHEDULE: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY STAGE TRANSITION TEST
+// --------------------------------------------------
+
+// Independent test data.
+// Does not modify the actual campaign.
+
+var _transition_test = {
+    current_event_stage: EventStage.DESIGN_SETUP,
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// TEST 1: Reject advancement before completion
+
+_transition_test.campaign_stage_events_completed[
+    EventStage.DESIGN_SETUP
+] = 3;
+
+var _early_rejected =
+    !advance_dynamic_campaign_stage(_transition_test);
+
+// TEST 2: Advance when Design Setup is complete
+
+_transition_test.campaign_stage_events_completed[
+    EventStage.DESIGN_SETUP
+] = 4;
+
+var _placement_reached =
+    advance_dynamic_campaign_stage(_transition_test)
+    && _transition_test.current_event_stage
+        == EventStage.PLACEMENT;
+
+// TEST 3: Cannot immediately skip Placement
+
+var _skip_rejected =
+    !advance_dynamic_campaign_stage(_transition_test);
+
+// TEST 4: Advance through all remaining stages
+
+var _sequence_passed = true;
+
+for (
+    var _stage = EventStage.PLACEMENT;
+    _stage < EventStage.RELEASE;
+    _stage++
+)
+{
+    // Complete the current stage
+    _transition_test.campaign_stage_events_completed[
+        _stage
+    ] = _transition_test.campaign_stage_targets[_stage];
+
+    // Advance exactly one stage
+    if (!advance_dynamic_campaign_stage(_transition_test)
+    || _transition_test.current_event_stage != _stage + 1)
+    {
+        _sequence_passed = false;
+        break;
+    }
+}
+
+// TEST 5: Cannot advance beyond Release
+
+_transition_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] = _transition_test.campaign_stage_targets[
+    EventStage.RELEASE
+];
+
+var _release_stops =
+    !advance_dynamic_campaign_stage(_transition_test)
+    && _transition_test.current_event_stage
+        == EventStage.RELEASE;
+
+// FINAL VALIDATION
+
+if (_early_rejected
+&& _placement_reached
+&& _skip_rejected
+&& _sequence_passed
+&& _release_stops)
+{
+    show_debug_message(
+        "STAGE TRANSITION: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "STAGE TRANSITION: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY STAGE COMPLETION TEST
+// --------------------------------------------------
+
+// Independent test data.
+// Does not modify the active campaign.
+
+var _stage_test = {
+    current_event_stage: EventStage.DESIGN_SETUP,
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// Test 1: Three of four encounters completed
+_stage_test.campaign_stage_events_completed[
+    EventStage.DESIGN_SETUP
+] = 3;
+
+var _stage_incomplete =
+    is_dynamic_stage_complete(_stage_test);
+
+// Test 2: Four of four encounters completed
+_stage_test.campaign_stage_events_completed[
+    EventStage.DESIGN_SETUP
+] = 4;
+
+var _stage_complete =
+    is_dynamic_stage_complete(_stage_test);
+
+// Test 3: Exceeding the target still counts
+_stage_test.campaign_stage_events_completed[
+    EventStage.DESIGN_SETUP
+] = 5;
+
+var _stage_exceeded =
+    is_dynamic_stage_complete(_stage_test);
+
+// Test 4: A new stage starts incomplete
+_stage_test.current_event_stage = EventStage.PLACEMENT;
+
+var _next_stage_incomplete =
+    is_dynamic_stage_complete(_stage_test);
+
+// Verify all conditions
+if (!_stage_incomplete
+&& _stage_complete
+&& _stage_exceeded
+&& !_next_stage_incomplete)
+{
+    show_debug_message(
+        "STAGE COMPLETION: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "STAGE COMPLETION: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY DYNAMIC ENCOUNTER COMPLETION TEST
+// --------------------------------------------------
+
+// Independent test data; does not modify the
+// player's actual campaign.
+
+var _progress_test = {
+    active_encounter: {
+        id: "TEST-001",
+        stage: EventStage.ROUTING
+    },
+    event_resolved: false,
+    campaign_events_completed: 0,
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// Test 1: Unresolved encounters must not count
+var _test_unresolved =
+    record_completed_dynamic_encounter(_progress_test);
+
+// Test 2: Resolve and record the encounter
+_progress_test.event_resolved = true;
+
+var _test_completed =
+    record_completed_dynamic_encounter(_progress_test);
+
+// Test 3: Attempt to record the same encounter again
+var _test_duplicate =
+    record_completed_dynamic_encounter(_progress_test);
+
+// Verify all conditions
+if (!_test_unresolved
+&& _test_completed
+&& !_test_duplicate
+&& _progress_test.campaign_events_completed == 1
+&& _progress_test.campaign_stage_events_completed[
+    EventStage.ROUTING
+] == 1)
+{
+    show_debug_message(
+        "DYNAMIC PROGRESS: Completion tracking = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "DYNAMIC PROGRESS: Completion tracking = FAIL"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY STAGE SCHEDULE TEST
+// --------------------------------------------------
+
+var _schedule_test = get_campaign_stage_targets(30);
+
+if (is_array(_schedule_test))
+{
+    var _schedule_total = 0;
+
+    for (var _i = 0; _i < array_length(_schedule_test); _i++)
+    {
+        _schedule_total += _schedule_test[_i];
+    }
+
+    show_debug_message(
+        "STAGE SCHEDULE: Total = "
+        + string(_schedule_total)
+    );
+
+    show_debug_message(
+        "STAGE SCHEDULE: Setup/Placement/Routing/Review/Release = "
+        + string(_schedule_test[EventStage.DESIGN_SETUP]) + "/"
+        + string(_schedule_test[EventStage.PLACEMENT]) + "/"
+        + string(_schedule_test[EventStage.ROUTING]) + "/"
+        + string(_schedule_test[EventStage.MANUFACTURER_REVIEW]) + "/"
+        + string(_schedule_test[EventStage.RELEASE])
+    );
+}
+else
+{
+    show_debug_message(
+        "STAGE SCHEDULE: ERROR - Invalid schedule"
+    );
+}
+
+
+// --------------------------------------------------
+// TEMPORARY CAMPAIGN SCHEDULE RANGE TEST
+// --------------------------------------------------
+
+// Verify every possible campaign length from 25 to 35.
+// Each schedule must have:
+// - Exactly five stages
+// - At least one event in every stage
+// - A total matching the requested event count
+
+var _schedule_range_passed = true;
+
+for (var _count = 25; _count <= 35; _count++)
+{
+    var _targets = get_campaign_stage_targets(_count);
+
+    if (!is_array(_targets))
+    {
+        _schedule_range_passed = false;
+        show_debug_message(
+            "SCHEDULE ERROR: Invalid target = "
+            + string(_count)
+        );
+        continue;
+    }
+
+    var _sum = 0;
+    var _valid = (array_length(_targets) == 5);
+
+    for (var _stage = 0;
+         _stage < array_length(_targets);
+         _stage++)
+    {
+        _sum += _targets[_stage];
+
+        if (_targets[_stage] < 1)
+        {
+            _valid = false;
+        }
+    }
+
+    if (_sum != _count || !_valid)
+    {
+        _schedule_range_passed = false;
+
+        show_debug_message(
+            "SCHEDULE ERROR: Target = "
+            + string(_count)
+            + " Actual = "
+            + string(_sum)
+        );
+    }
+}
+
+if (_schedule_range_passed)
+{
+    show_debug_message(
+        "STAGE SCHEDULE: All lengths 25-35 = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "STAGE SCHEDULE: Range validation FAILED"
+    );
+}
 
 // --------------------------------------------------
 // TEMPORARY EVENT LIBRARY DIAGNOSTICS
@@ -39,7 +709,7 @@ event_library = create_event_library();
 // Retrieve the PCB Design event pool
 var _pcb_pool = get_event_pool(
     event_library,
-    EventStage.PCB_DESIGN
+    EventStage.ROUTING
 );
 
 // Report the number of registered events
@@ -69,7 +739,7 @@ if (array_length(_pcb_pool) > 0)
 // Test with no previously played events
 var _eligible_new = get_eligible_stage_events(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     []
 );
@@ -83,7 +753,7 @@ show_debug_message(
 // Simulate PCB-0001 having already been played
 var _eligible_played = get_eligible_stage_events(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     ["PCB-0001"]
 );
@@ -102,7 +772,7 @@ show_debug_message(
 var _flag_test_library = create_event_library();
 
 var _flag_test_event =
-    _flag_test_library.pcb_design[0];
+    _flag_test_library.routing[0];
 
 // Simulate a follow-up event that requires an
 // unresolved CAD issue and becomes unavailable
@@ -118,7 +788,7 @@ _flag_test_event.blocked_flags = [
 // Test 1: Required flag is missing
 var _test_missing = get_eligible_stage_events(
     _flag_test_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     [],
     []
@@ -127,7 +797,7 @@ var _test_missing = get_eligible_stage_events(
 // Test 2: Required flag is present
 var _test_matching = get_eligible_stage_events(
     _flag_test_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     [],
     ["cad_changes_unverified"]
@@ -136,7 +806,7 @@ var _test_matching = get_eligible_stage_events(
 // Test 3: Required and blocked flags are present
 var _test_blocked = get_eligible_stage_events(
     _flag_test_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     [],
     [
@@ -167,7 +837,7 @@ show_debug_message(
 // Test selection using our registered PCB Design event
 var _weighted_eligible = get_eligible_stage_events(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     [],
     []
@@ -559,8 +1229,110 @@ design_events = [
 
 	// Stage and encounter state for the future dynamic campaign
 	// Do not select a new encounter until the stage pools are populated.
-	current_event_stage = EventStage.PLANNING;
+	current_event_stage = EventStage.DESIGN_SETUP;
 	active_encounter = undefined;
+	
+// --------------------------------------------------
+// DYNAMIC CAMPAIGN PROGRESS TRACKING
+// --------------------------------------------------
+
+// Total number of completed dynamic encounters.
+// This is separate from the legacy event index.
+campaign_events_completed = 0;
+
+// Completed encounters in each of the five stages.
+// Array indices correspond to the EventStage enum.
+campaign_stage_events_completed = array_create(5, 0);
+
+// Mandatory reviews completed during this campaign
+completed_checkpoint_ids = [];
+
+// Temporary initialization diagnostics
+show_debug_message(
+    "STAGE PROGRESS: Stage count = "
+    + string(array_length(campaign_stage_events_completed))
+);
+
+show_debug_message(
+    "STAGE PROGRESS: Completed encounters = "
+    + string(campaign_events_completed)
+);
+
+show_debug_message(
+    "STAGE PROGRESS: Current stage completed = "
+    + string(campaign_stage_events_completed[current_event_stage])
+);
+
+// --------------------------------------------------
+// INITIALIZE DYNAMIC CAMPAIGN SCHEDULE
+// --------------------------------------------------
+
+// Select the campaign length once per new campaign.
+campaign_event_target = get_campaign_event_target(
+    selected_campaign_difficulty
+);
+
+// No schedule exists before difficulty selection.
+campaign_stage_targets = undefined;
+
+// Create the schedule only for a valid difficulty.
+if (campaign_event_target > 0)
+{
+    campaign_stage_targets = get_campaign_stage_targets(
+        campaign_event_target
+    );
+
+    if (is_array(campaign_stage_targets))
+    {
+        // Verify that stage allocations match the target.
+        var _scheduled_total = 0;
+
+        for (
+            var _s = 0;
+            _s < array_length(campaign_stage_targets);
+            _s++
+        )
+        {
+            _scheduled_total += campaign_stage_targets[_s];
+        }
+
+        show_debug_message(
+            "CAMPAIGN SCHEDULE: Difficulty = "
+            + get_campaign_difficulty_name(
+                selected_campaign_difficulty
+            )
+        );
+
+        show_debug_message(
+            "CAMPAIGN SCHEDULE: Target = "
+            + string(campaign_event_target)
+        );
+
+        show_debug_message(
+            "CAMPAIGN SCHEDULE: Allocation = "
+            + string(_scheduled_total)
+        );
+
+        if (_scheduled_total == campaign_event_target)
+        {
+            show_debug_message(
+                "CAMPAIGN SCHEDULE: PASS"
+            );
+        }
+        else
+        {
+            show_debug_message(
+                "CAMPAIGN SCHEDULE: FAIL"
+            );
+        }
+    }
+    else
+    {
+        show_debug_message(
+            "CAMPAIGN SCHEDULE: ERROR - Invalid allocation"
+        );
+    }
+}
 
 	// Temporary diagnostic: confirms initialization and restart reset
 	show_debug_message(
@@ -1253,7 +2025,7 @@ var _test_flags = [];
 // Test 1: Select our registered PCB Design event
 var _test_first_event = select_next_stage_event(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     _test_played_ids,
     _test_flags
@@ -1277,7 +2049,7 @@ if (is_struct(_test_first_event))
 // Test 2: Confirm the event cannot repeat
 var _test_second_event = select_next_stage_event(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     _test_played_ids,
     _test_flags
@@ -1294,7 +2066,7 @@ if (!is_struct(_test_second_event))
 // Test 3: Confirm empty stage pools are safe
 var _test_empty_stage = select_next_stage_event(
     event_library,
-    EventStage.FABRICATION,
+    EventStage.MANUFACTURER_REVIEW,
     CampaignDifficulty.MEDIUM,
     _test_played_ids,
     _test_flags
@@ -1313,7 +2085,7 @@ if (!is_struct(_test_empty_stage))
 // --------------------------------------------------
 
 // Retrieve the permanent event definition
-var _source_event = event_library.pcb_design[0];
+var _source_event = event_library.routing[0];
 
 // Create an independent, shuffled encounter
 var _test_encounter = prepare_event_encounter(
@@ -1363,7 +2135,7 @@ var _pipeline_flags = [];
 // Select and prepare the first encounter
 var _pipeline_event = select_and_prepare_stage_encounter(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     _pipeline_played,
     _pipeline_flags
@@ -1391,7 +2163,7 @@ if (is_struct(_pipeline_event))
 // Check that the same event cannot be selected again
 var _pipeline_next = select_and_prepare_stage_encounter(
     event_library,
-    EventStage.PCB_DESIGN,
+    EventStage.ROUTING,
     CampaignDifficulty.MEDIUM,
     _pipeline_played,
     _pipeline_flags
@@ -1412,7 +2184,7 @@ if (!is_struct(_pipeline_next))
 // Test using an independent session object, not obj_game state.
 var _session_test = {
     event_library: event_library,
-    current_event_stage: EventStage.PCB_DESIGN,
+    current_event_stage: EventStage.ROUTING,
     selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
     played_event_ids: [],
     project_flags: [],
@@ -1467,7 +2239,7 @@ if (is_struct(_bridge_legacy_event))
 
 // Temporarily supply a prepared encounter for this test.
 var _bridge_original_encounter = active_encounter;
-active_encounter = prepare_event_encounter(event_library.pcb_design[0]);
+active_encounter = prepare_event_encounter(event_library.routing[0]);
 
 var _bridge_dynamic_event = get_current_campaign_event();
 

@@ -67,7 +67,7 @@ function create_pcb_design_event_pool()
 
     var _event = create_decision_event(
         "PCB-0001",
-        EventStage.PCB_DESIGN,
+        EventStage.ROUTING,
         EventCategory.SETBACK,
         "CAD SOFTWARE HAS STOPPED RESPONDING!",
         "Your PCB design software crashed during routing. "

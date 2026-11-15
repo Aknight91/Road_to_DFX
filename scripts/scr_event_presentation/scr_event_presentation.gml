@@ -115,3 +115,65 @@ function begin_campaign_encounter(_campaign)
 
     return true;
 }
+
+// --------------------------------------------------
+// BEGIN A SCHEDULED CAMPAIGN ENCOUNTER
+// --------------------------------------------------
+
+// Selects an event using the campaign schedule,
+// including mandatory review checkpoints.
+//
+// Prepares the encounter, stores it, and records
+// its ID in campaign history.
+//
+// Returns true when an encounter begins.
+// Returns false when selection is not possible.
+//
+// Does not modify legacy campaign progression.
+
+function begin_scheduled_campaign_encounter(_campaign)
+{
+    // Never replace an encounter already in progress
+    if (is_struct(_campaign.active_encounter))
+    {
+        return false;
+    }
+
+    // Ensure campaign history is initialized
+    if (!is_array(_campaign.played_event_ids))
+    {
+        return false;
+    }
+
+    // Select an event using the checkpoint-aware rules
+    var _definition = select_scheduled_stage_event(
+        _campaign
+    );
+
+    if (!is_struct(_definition))
+    {
+        return false;
+    }
+
+    // Clone the event and randomize its choices
+    var _encounter = prepare_event_encounter(
+        _definition
+    );
+
+    if (!is_struct(_encounter))
+    {
+        return false;
+    }
+
+    // Store the prepared encounter
+    _campaign.active_encounter = _encounter;
+
+    // Record the event ID in campaign history
+    var _played = _campaign.played_event_ids;
+
+    array_push(_played, _encounter.id);
+
+    _campaign.played_event_ids = _played;
+
+    return true;
+}

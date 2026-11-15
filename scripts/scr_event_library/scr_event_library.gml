@@ -1,16 +1,15 @@
-
 /// @description Stage-based event library for Road to DFX
 
 // --------------------------------------------------
-// ENGINEERING PROJECT STAGES
+// PCB DESIGN PROJECT STAGES
 // --------------------------------------------------
 
 enum EventStage
 {
-    PLANNING = 0,
-    PCB_DESIGN,
-    FABRICATION,
-    ASSEMBLY_TEST,
+    DESIGN_SETUP = 0,
+    PLACEMENT,
+    ROUTING,
+    MANUFACTURER_REVIEW,
     RELEASE
 }
 
@@ -19,7 +18,7 @@ enum EventStage
 // CREATE EVENT LIBRARY
 // --------------------------------------------------
 
-// Stores every available event, grouped by project stage.
+// Stores every available event, grouped by PCB design phase.
 //
 // This is NOT the active campaign event sequence.
 // Events will be selected from these pools as the
@@ -28,10 +27,10 @@ enum EventStage
 function create_event_library()
 {
     return {
-        planning: [],
-		pcb_design: create_pcb_design_event_pool(),
-        fabrication: [],
-        assembly_test: [],
+        design_setup: [],
+        placement: [],
+        routing: create_pcb_design_event_pool(),
+        manufacturer_review: [],
         release: []
     };
 }
@@ -45,17 +44,17 @@ function get_event_pool(_library, _stage)
 {
     switch (_stage)
     {
-        case EventStage.PLANNING:
-            return _library.planning;
+        case EventStage.DESIGN_SETUP:
+            return _library.design_setup;
 
-        case EventStage.PCB_DESIGN:
-            return _library.pcb_design;
+        case EventStage.PLACEMENT:
+            return _library.placement;
 
-        case EventStage.FABRICATION:
-            return _library.fabrication;
+        case EventStage.ROUTING:
+            return _library.routing;
 
-        case EventStage.ASSEMBLY_TEST:
-            return _library.assembly_test;
+        case EventStage.MANUFACTURER_REVIEW:
+            return _library.manufacturer_review;
 
         case EventStage.RELEASE:
             return _library.release;
