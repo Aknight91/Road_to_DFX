@@ -32,6 +32,303 @@ selected_campaign_difficulty = CampaignDifficulty.NONE;
 event_library = create_event_library();
 
 // --------------------------------------------------
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+// TEMPORARY DELAYED CONSEQUENCE SELECTOR TEST
+// --------------------------------------------------
+
+// Independent session. Does not modify real gameplay.
+
+var _consequence_session = {
+    event_library: event_library,
+    current_event_stage: EventStage.ROUTING,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: []
+};
+
+// TEST 1: No consequence during Routing
+var _routing_consequence =
+    select_stage_consequence_event(_consequence_session);
+
+var _routing_clear =
+    !is_struct(_routing_consequence);
+
+// TEST 2: Manufacturer Review without the flag
+_consequence_session.current_event_stage =
+    EventStage.MANUFACTURER_REVIEW;
+
+var _without_flag =
+    select_stage_consequence_event(_consequence_session);
+
+var _no_flag_clear =
+    !is_struct(_without_flag);
+
+// TEST 3: Flag permits the delayed consequence
+_consequence_session.project_flags = [
+    "cad_changes_unverified"
+];
+
+var _with_flag =
+    select_stage_consequence_event(_consequence_session);
+
+var _flag_eligible = false;
+
+if (is_struct(_with_flag))
+{
+    _flag_eligible =
+        _with_flag.id == "PCB-0002";
+}
+
+// TEST 4: Already-played consequence cannot repeat
+_consequence_session.played_event_ids = [
+    "PCB-0002"
+];
+
+var _already_played =
+    select_stage_consequence_event(_consequence_session);
+
+var _repeat_rejected =
+    !is_struct(_already_played);
+
+// FINAL VALIDATION
+if (_routing_clear
+&& _no_flag_clear
+&& _flag_eligible
+&& _repeat_rejected)
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE SELECTOR: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE SELECTOR: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY CONSEQUENCE INTERRUPTION TEST
+// --------------------------------------------------
+
+// Independent test session. Does not alter gameplay.
+// Manufacturer Review currently has one consequence
+// and no scheduled events in its pool.
+
+var _interrupt_test = {
+    event_library: event_library,
+    current_event_stage: EventStage.MANUFACTURER_REVIEW,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: ["cad_changes_unverified"],
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0),
+    campaign_events_completed: 0,
+    active_encounter: undefined,
+    event_resolved: false,
+    completed_checkpoint_ids: []
+};
+
+// TEST 1: With zero chance, no interruption starts.
+var _interrupt_zero_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 0);
+
+var _interrupt_zero_ok =
+    !_interrupt_zero_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// TEST 2: Force the eligible interruption.
+var _interrupt_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_selected_ok = false;
+
+if (_interrupt_started && is_struct(_interrupt_test.active_encounter))
+{
+    _interrupt_selected_ok =
+        _interrupt_test.active_encounter.id == "PCB-0002"
+        && _interrupt_test.active_encounter.is_consequence;
+}
+
+// TEST 3: A consequence does not consume a scheduled slot.
+var _interrupt_count_ok = false;
+
+if (_interrupt_selected_ok)
+{
+    _interrupt_test.event_resolved = true;
+
+    var _interrupt_recorded =
+        record_completed_dynamic_encounter(_interrupt_test);
+
+    _interrupt_count_ok =
+        _interrupt_recorded
+        && _interrupt_test.campaign_events_completed == 0
+        && _interrupt_test.campaign_stage_events_completed[
+            EventStage.MANUFACTURER_REVIEW
+        ] == 0;
+}
+
+// TEST 4: Previously played consequences cannot repeat.
+_interrupt_test.active_encounter = undefined;
+_interrupt_test.event_resolved = false;
+
+var _interrupt_repeat_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_repeat_ok =
+    !_interrupt_repeat_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// TEST 5: The unresolved CAD flag is required.
+_interrupt_test.played_event_ids = [];
+_interrupt_test.project_flags = [];
+
+var _interrupt_missing_flag_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_missing_flag_ok =
+    !_interrupt_missing_flag_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// FINAL VALIDATION
+if (_interrupt_zero_ok
+&& _interrupt_selected_ok
+&& _interrupt_count_ok
+&& _interrupt_repeat_ok
+&& _interrupt_missing_flag_ok)
+{
+    show_debug_message(
+        "CONSEQUENCE INTERRUPTION TEST: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CONSEQUENCE INTERRUPTION TEST: Tests FAILED"
+    );
+
+    show_debug_message("INTERRUPTION DEBUG: Zero chance = "
+        + string(_interrupt_zero_ok));
+    show_debug_message("INTERRUPTION DEBUG: Forced event = "
+        + string(_interrupt_selected_ok));
+    show_debug_message("INTERRUPTION DEBUG: Slot unchanged = "
+        + string(_interrupt_count_ok));
+    show_debug_message("INTERRUPTION DEBUG: No repeat = "
+        + string(_interrupt_repeat_ok));
+    show_debug_message("INTERRUPTION DEBUG: Flag required = "
+        + string(_interrupt_missing_flag_ok));
+}
+
+// --------------------------------------------------
+// TEMPORARY DELAYED CONSEQUENCE STAGE TEST
+// --------------------------------------------------
+
+// Verify the consequence is eligible during
+// Manufacturer Review only when its flag exists.
+
+var _review_without_flag = get_eligible_stage_events(
+    event_library,
+    EventStage.MANUFACTURER_REVIEW,
+    CampaignDifficulty.MEDIUM,
+    [],
+    []
+);
+
+var _review_with_flag = get_eligible_stage_events(
+    event_library,
+    EventStage.MANUFACTURER_REVIEW,
+    CampaignDifficulty.MEDIUM,
+    [],
+    ["cad_changes_unverified"]
+);
+
+// Verify the Routing pool still contains PCB-0001.
+var _routing_pool_test = get_event_pool(
+    event_library,
+    EventStage.ROUTING
+);
+
+var _routing_ok = false;
+var _consequence_ok = false;
+
+if (array_length(_routing_pool_test) == 1)
+{
+    _routing_ok =
+        _routing_pool_test[0].id == "PCB-0001";
+}
+
+if (array_length(_review_with_flag) == 1)
+{
+    _consequence_ok =
+        _review_with_flag[0].id == "PCB-0002"
+        && _review_with_flag[0].is_consequence;
+}
+
+if (_routing_ok
+&& _consequence_ok
+&& array_length(_review_without_flag) == 0)
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE STAGE: PASS"
+    );
+}
+
+else
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE STAGE: FAILED"
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Routing valid = "
+        + string(_routing_ok)
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Routing pool count = "
+        + string(array_length(_routing_pool_test))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Review without flag = "
+        + string(array_length(_review_without_flag))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Review with flag = "
+        + string(array_length(_review_with_flag))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Consequence valid = "
+        + string(_consequence_ok)
+    );
+
+    // List all registered Manufacturer Review events
+    var _manufacturer_pool = get_event_pool(
+        event_library,
+        EventStage.MANUFACTURER_REVIEW
+    );
+
+    for (
+        var _i = 0;
+        _i < array_length(_manufacturer_pool);
+        _i++
+    )
+    {
+        show_debug_message(
+            "DELAYED DEBUG: Manufacturer event = "
+            + _manufacturer_pool[_i].id
+        );
+    }
+}
+
+
+// --------------------------------------------------
+>>>>>>> Stashed changes
 // TEMPORARY FINAL RELEASE SIGNOFF TEST
 // --------------------------------------------------
 
@@ -116,6 +413,10 @@ else
 }
 
 // --------------------------------------------------
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 // TEMPORARY CHECKPOINT COMPLETION RECORD TEST
 // --------------------------------------------------
 
@@ -188,7 +489,7 @@ var _pipe_pool = _pipe_library.routing;
 // Create a temporary Routing Review
 var _pipe_review = variable_clone(_pipe_pool[0]);
 
-_pipe_review.id = "RTE-REVIEW-001";
+_pipe_review[$ "id"] = "RTE-REVIEW-001";
 _pipe_review.category = EventCategory.MILESTONE;
 
 array_push(_pipe_pool, _pipe_review);
@@ -293,7 +594,7 @@ var _cp_sel_pool = _cp_sel_library.routing;
 // existing test event. The real library is unchanged.
 var _cp_sel_review = variable_clone(_cp_sel_pool[0]);
 
-_cp_sel_review.id = "RTE-REVIEW-001";
+_cp_sel_review[$ "id"] = "RTE-REVIEW-001";
 _cp_sel_review.category = EventCategory.MILESTONE;
 
 array_push(_cp_sel_pool, _cp_sel_review);
@@ -1575,6 +1876,94 @@ required_dfa = 50;
 required_dfm = 50;
 required_dft = 50;
 required_sanity = 1;
+
+// --------------------------------------------------
+// EVALUATE FINAL DESIGN RELEASE OUTCOME
+// --------------------------------------------------
+
+// Returns the campaign outcome without changing
+// any player resources or campaign state.
+//
+// Shared rules for the legacy and dynamic campaigns.
+
+evaluate_release_outcome = function(
+    _dfa,
+    _dfm,
+    _dft,
+    _sanity,
+    _overdue_workdays
+)
+{
+    // All three DFX requirements are mandatory.
+    if (_dfa < required_dfa
+    || _dfm < required_dfm
+    || _dft < required_dft)
+    {
+        return CampaignOutcome.FAILURE;
+    }
+
+    // Special outcome: Design released successfully,
+    // but the engineer has zero sanity and is overdue.
+    if (_overdue_workdays > 0
+    && _sanity < required_sanity)
+    {
+        return CampaignOutcome.HALF_VICTORY;
+    }
+
+    // Full victory requires at least 1% sanity.
+    if (_sanity < required_sanity)
+    {
+        return CampaignOutcome.FAILURE;
+    }
+
+    return CampaignOutcome.VICTORY;
+};
+
+// --------------------------------------------------
+// TEMPORARY RELEASE OUTCOME REGRESSION TEST
+// --------------------------------------------------
+
+var _outcome_full = (
+    evaluate_release_outcome(50, 50, 50, 1, 0)
+    == CampaignOutcome.VICTORY
+);
+
+var _outcome_dfx_failure = (
+    evaluate_release_outcome(50, 50, 49, 80, 0)
+    == CampaignOutcome.FAILURE
+);
+
+var _outcome_half = (
+    evaluate_release_outcome(50, 50, 50, 0, 2)
+    == CampaignOutcome.HALF_VICTORY
+);
+
+var _outcome_sanity_failure = (
+    evaluate_release_outcome(50, 50, 50, 0, 0)
+    == CampaignOutcome.FAILURE
+);
+
+var _outcome_failure_precedence = (
+    evaluate_release_outcome(50, 49, 50, 0, 2)
+    == CampaignOutcome.FAILURE
+);
+
+if (_outcome_full
+&& _outcome_dfx_failure
+&& _outcome_half
+&& _outcome_sanity_failure
+&& _outcome_failure_precedence)
+{
+    show_debug_message(
+        "RELEASE OUTCOME: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "RELEASE OUTCOME: Tests FAILED"
+    );
+}
 
 // --------------------------------------------------
 // CAMPAIGN MESSAGE INITIALIZATION

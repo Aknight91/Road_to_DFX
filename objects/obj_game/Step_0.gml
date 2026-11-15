@@ -713,6 +713,12 @@ if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
 && continue_requested)
 {
  
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+	if (current_event_index < array_length(design_events) - 1)
+=======
+>>>>>>> Stashed changes
 	
 
 if (is_struct(active_encounter))
@@ -744,6 +750,63 @@ if (is_struct(active_encounter))
         // Clear the completed encounter before
         // attempting to select another one.
         active_encounter = undefined;
+<<<<<<< Updated upstream
+=======
+		
+// --------------------------------------------------
+// AUTOMATIC ENGINEERING STAGE PROGRESSION
+// --------------------------------------------------
+
+// A stage advances only after its scheduled
+// encounter target has been completed.
+//
+// Consequence interruptions do not contribute
+// to these stage completion totals.
+
+if (is_dynamic_stage_complete(id))
+{
+    var _completed_stage = current_event_stage;
+
+    // Release is the final engineering stage.
+    if (_completed_stage < EventStage.RELEASE)
+    {
+        // This function also enforces mandatory
+        // Placement and Routing reviews.
+        if (advance_dynamic_campaign_stage(id))
+        {
+            show_debug_message(
+                "DYNAMIC STAGE: Advanced from "
+                + string(_completed_stage)
+                + " to "
+                + string(current_event_stage)
+            );
+        }
+        else
+        {
+            show_debug_message(
+                "DYNAMIC STAGE: Advancement blocked"
+            );
+        }
+    }
+    else
+    {
+        // All scheduled Release encounters are done.
+        // Check whether final evaluation is permitted.
+        if (is_dynamic_campaign_release_ready(id))
+        {
+            show_debug_message(
+                "DYNAMIC STAGE: Final release ready"
+            );
+        }
+        else
+        {
+            show_debug_message(
+                "DYNAMIC STAGE: Final release blocked"
+            );
+        }
+    }
+}
+>>>>>>> Stashed changes
 
         // ------------------------------------------
         // AUTOMATIC DYNAMIC EVENT SELECTION
@@ -804,6 +867,10 @@ if (is_struct(active_encounter))
 
 else if (current_event_index < array_length(design_events) - 1)
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 	{
 	    current_event_index += 1;
 

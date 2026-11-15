@@ -131,31 +131,88 @@ function begin_campaign_encounter(_campaign)
 //
 // Does not modify legacy campaign progression.
 
-function begin_scheduled_campaign_encounter(_campaign)
+
+// --------------------------------------------------
+// BEGIN A SCHEDULED CAMPAIGN ENCOUNTER
+// --------------------------------------------------
+
+// Consequences may interrupt scheduled engineering
+// events without consuming their event slots.
+//
+// Probability defaults to 25 percent.
+// Test calls can override it with 0 or 100.
+
+function begin_scheduled_campaign_encounter(
+    _campaign,
+    _consequence_chance_percent = 25
+)
 {
-    // Never replace an encounter already in progress
+    // Never replace an active encounter
     if (is_struct(_campaign.active_encounter))
     {
         return false;
     }
 
-    // Ensure campaign history is initialized
+    // Verify campaign history exists
     if (!is_array(_campaign.played_event_ids))
     {
         return false;
     }
 
-    // Select an event using the checkpoint-aware rules
-    var _definition = select_scheduled_stage_event(
-        _campaign
-    );
+    var _definition = undefined;
 
+    // --------------------------------------------------
+    // CHECK FOR A CONSEQUENCE INTERRUPTION
+    // --------------------------------------------------
+
+    // Consequences can occur only while the current
+    // stage still has scheduled events remaining.
+    //
+    // Mandatory checkpoints cannot be interrupted.
+
+    if (is_array(_campaign.campaign_stage_targets)
+    && is_array(_campaign.campaign_stage_events_completed)
+    && !is_dynamic_stage_complete(_campaign)
+    && get_due_stage_checkpoint_id(_campaign) == "")
+    {
+        var _chance = clamp(
+            _consequence_chance_percent,
+            0,
+            100
+        );
+
+        if (random(100) < _chance)
+        {
+            _definition = select_stage_consequence_event(
+                _campaign
+            );
+        }
+    }
+
+    // --------------------------------------------------
+    // NORMAL ENGINEERING EVENT SELECTION
+    // --------------------------------------------------
+
+    // No consequence selected.
+    // Continue with the scheduled timeline.
+
+    if (!is_struct(_definition))
+    {
+        _definition = select_scheduled_stage_event(
+            _campaign
+        );
+    }
+
+    // No eligible encounter exists
     if (!is_struct(_definition))
     {
         return false;
     }
 
-    // Clone the event and randomize its choices
+    // --------------------------------------------------
+    // PREPARE THE SELECTED ENCOUNTER
+    // --------------------------------------------------
+
     var _encounter = prepare_event_encounter(
         _definition
     );
@@ -168,12 +225,30 @@ function begin_scheduled_campaign_encounter(_campaign)
     // Store the prepared encounter
     _campaign.active_encounter = _encounter;
 
-    // Record the event ID in campaign history
-    var _played = _campaign.played_event_ids;
+    // Record the event ID to prevent unwanted repeats
+    array_push(
+        _campaign.played_event_ids,
+        _encounter.id
+    );
 
-    array_push(_played, _encounter.id);
+    // --------------------------------------------------
+    // CONSEQUENCE DIAGNOSTIC
+    // --------------------------------------------------
 
-    _campaign.played_event_ids = _played;
+    if (variable_struct_exists(
+        _encounter,
+        "is_consequence"
+    ))
+    {
+        if (_encounter.is_consequence)
+        {
+            show_debug_message(
+                "CONSEQUENCE INTERRUPTION: "
+                + _encounter.id
+            );
+        }
+    }
 
     return true;
 }
+

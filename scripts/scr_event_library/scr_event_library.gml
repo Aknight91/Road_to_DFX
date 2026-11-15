@@ -14,26 +14,54 @@ enum EventStage
 }
 
 
+
 // --------------------------------------------------
 // CREATE EVENT LIBRARY
 // --------------------------------------------------
 
-// Stores every available event, grouped by PCB design phase.
-//
-// This is NOT the active campaign event sequence.
-// Events will be selected from these pools as the
-// player progresses through a campaign.
+// Organizes PCB events into their engineering stages.
+// Consequence events remain in their appropriate
+// stage pool but are not scheduled milestones.
+
 
 function create_event_library()
 {
+    var _pcb_events = create_pcb_design_event_pool();
+
+    var _routing_events = [];
+    var _manufacturer_events = [];
+
+    // Organize each event by its engineering stage.
+    for (
+        var _i = 0;
+        _i < array_length(_pcb_events);
+        _i++
+    )
+    {
+        var _event = _pcb_events[_i];
+
+        switch (_event.stage)
+        {
+            case EventStage.ROUTING:
+                array_push(_routing_events, _event);
+                break;
+
+            case EventStage.MANUFACTURER_REVIEW:
+                array_push(_manufacturer_events, _event);
+                break;
+        }
+    }
+
     return {
         design_setup: [],
         placement: [],
-        routing: create_pcb_design_event_pool(),
-        manufacturer_review: [],
+        routing: _routing_events,
+        manufacturer_review: _manufacturer_events,
         release: []
     };
 }
+
+
 
 
 // --------------------------------------------------

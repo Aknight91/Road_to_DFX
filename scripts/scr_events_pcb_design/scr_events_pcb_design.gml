@@ -86,6 +86,11 @@ function create_pcb_design_event_pool()
     {
         array_push(_events, _event);
     }
+<<<<<<< Updated upstream
+=======
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
 	
 // --------------------------------------------------
 // PCB-0002: MISSING CONNECTIONS DETECTED
@@ -130,7 +135,11 @@ _waive.sanity_change = -3;
 // BUILD THE FOLLOW-UP EVENT
 var _followup = create_decision_event(
     "PCB-0002",
+<<<<<<< Updated upstream
     EventStage.ROUTING,
+=======
+    EventStage.MANUFACTURER_REVIEW,
+>>>>>>> Stashed changes
     EventCategory.SETBACK,
     "NETLIST AUDIT: MISSING CONNECTIONS!",
     "The nightly netlist comparison has identified "
@@ -161,6 +170,10 @@ if (is_struct(_followup))
     array_push(_events, _followup);
 }
 
+<<<<<<< Updated upstream
+=======
+>>>>>>> Stashed changes
+>>>>>>> Stashed changes
 
     return _events;
 }
