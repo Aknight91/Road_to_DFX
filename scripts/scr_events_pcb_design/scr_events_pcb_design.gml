@@ -86,6 +86,81 @@ function create_pcb_design_event_pool()
     {
         array_push(_events, _event);
     }
+	
+// --------------------------------------------------
+// PCB-0002: MISSING CONNECTIONS DETECTED
+// --------------------------------------------------
+
+// This encounter is available only when the player
+// ignored missing CAD changes in PCB-0001.
+
+// OPTION A: Investigate and repair the design
+var _audit = create_event_choice(
+    "PCB-0002-A",
+    "Audit the affected nets and repair the routing",
+    "The missing connections have been restored. "
+    + "The PCB is back in sync with the netlist."
+);
+
+_audit.hours_cost = 6;
+_audit.drc_change = -3;
+_audit.sanity_change = -4;
+
+// The original problem has been resolved.
+_audit.clear_flags = ["cad_changes_unverified"];
+
+
+// OPTION B: Accept the discrepancies
+var _waive = create_event_choice(
+    "PCB-0002-B",
+    "Mark the discrepancies as known issues",
+    "The discrepancies have been documented. "
+    + "Unfortunately, documenting a missing connection "
+    + "does not make the connection exist."
+);
+
+_waive.hours_cost = 1;
+_waive.drc_change = 4;
+_waive.risk_change = 5;
+_waive.sanity_change = -3;
+
+// The unresolved condition remains active.
+
+
+// BUILD THE FOLLOW-UP EVENT
+var _followup = create_decision_event(
+    "PCB-0002",
+    EventStage.MANUFACTURER_REVIEW,
+    EventCategory.SETBACK,
+    "NETLIST AUDIT: MISSING CONNECTIONS!",
+    "The nightly netlist comparison has identified "
+    + "connections that disappeared following the "
+    + "CAD software crash. The electrical engineer "
+    + "would like to know where they went.",
+    [
+        _audit,
+        _waive
+    ]
+);
+
+// Only select this event if the player previously
+// chose to ignore the missing CAD changes.
+
+if (is_struct(_followup))
+{
+    // Only eligible when the earlier CAD changes
+    // were ignored by the player.
+    _followup.required_flags = [
+        "cad_changes_unverified"
+    ];
+
+    // This is a consequence, not a scheduled
+    // engineering milestone.
+    _followup.is_consequence = true;
+
+    array_push(_events, _followup);
+}
+
 
     return _events;
 }

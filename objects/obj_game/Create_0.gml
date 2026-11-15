@@ -32,6 +32,382 @@ selected_campaign_difficulty = CampaignDifficulty.NONE;
 event_library = create_event_library();
 
 // --------------------------------------------------
+// TEMPORARY DELAYED CONSEQUENCE SELECTOR TEST
+// --------------------------------------------------
+
+// Independent session. Does not modify real gameplay.
+
+var _consequence_session = {
+    event_library: event_library,
+    current_event_stage: EventStage.ROUTING,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: []
+};
+
+// TEST 1: No consequence during Routing
+var _routing_consequence =
+    select_stage_consequence_event(_consequence_session);
+
+var _routing_clear =
+    !is_struct(_routing_consequence);
+
+// TEST 2: Manufacturer Review without the flag
+_consequence_session.current_event_stage =
+    EventStage.MANUFACTURER_REVIEW;
+
+var _without_flag =
+    select_stage_consequence_event(_consequence_session);
+
+var _no_flag_clear =
+    !is_struct(_without_flag);
+
+// TEST 3: Flag permits the delayed consequence
+_consequence_session.project_flags = [
+    "cad_changes_unverified"
+];
+
+var _with_flag =
+    select_stage_consequence_event(_consequence_session);
+
+var _flag_eligible = false;
+
+if (is_struct(_with_flag))
+{
+    _flag_eligible =
+        _with_flag.id == "PCB-0002";
+}
+
+// TEST 4: Already-played consequence cannot repeat
+_consequence_session.played_event_ids = [
+    "PCB-0002"
+];
+
+var _already_played =
+    select_stage_consequence_event(_consequence_session);
+
+var _repeat_rejected =
+    !is_struct(_already_played);
+
+// FINAL VALIDATION
+if (_routing_clear
+&& _no_flag_clear
+&& _flag_eligible
+&& _repeat_rejected)
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE SELECTOR: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE SELECTOR: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
+// TEMPORARY CONSEQUENCE INTERRUPTION TEST
+// --------------------------------------------------
+
+// Independent test session. Does not alter gameplay.
+// Manufacturer Review currently has one consequence
+// and no scheduled events in its pool.
+
+var _interrupt_test = {
+    event_library: event_library,
+    current_event_stage: EventStage.MANUFACTURER_REVIEW,
+    selected_campaign_difficulty: CampaignDifficulty.MEDIUM,
+    played_event_ids: [],
+    project_flags: ["cad_changes_unverified"],
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: array_create(5, 0),
+    campaign_events_completed: 0,
+    active_encounter: undefined,
+    event_resolved: false,
+    completed_checkpoint_ids: []
+};
+
+// TEST 1: With zero chance, no interruption starts.
+var _interrupt_zero_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 0);
+
+var _interrupt_zero_ok =
+    !_interrupt_zero_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// TEST 2: Force the eligible interruption.
+var _interrupt_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_selected_ok = false;
+
+if (_interrupt_started && is_struct(_interrupt_test.active_encounter))
+{
+    _interrupt_selected_ok =
+        _interrupt_test.active_encounter.id == "PCB-0002"
+        && _interrupt_test.active_encounter.is_consequence;
+}
+
+// TEST 3: A consequence does not consume a scheduled slot.
+var _interrupt_count_ok = false;
+
+if (_interrupt_selected_ok)
+{
+    _interrupt_test.event_resolved = true;
+
+    var _interrupt_recorded =
+        record_completed_dynamic_encounter(_interrupt_test);
+
+    _interrupt_count_ok =
+        _interrupt_recorded
+        && _interrupt_test.campaign_events_completed == 0
+        && _interrupt_test.campaign_stage_events_completed[
+            EventStage.MANUFACTURER_REVIEW
+        ] == 0;
+}
+
+// TEST 4: Previously played consequences cannot repeat.
+_interrupt_test.active_encounter = undefined;
+_interrupt_test.event_resolved = false;
+
+var _interrupt_repeat_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_repeat_ok =
+    !_interrupt_repeat_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// TEST 5: The unresolved CAD flag is required.
+_interrupt_test.played_event_ids = [];
+_interrupt_test.project_flags = [];
+
+var _interrupt_missing_flag_started =
+    begin_scheduled_campaign_encounter(_interrupt_test, 100);
+
+var _interrupt_missing_flag_ok =
+    !_interrupt_missing_flag_started
+    && !is_struct(_interrupt_test.active_encounter);
+
+// FINAL VALIDATION
+if (_interrupt_zero_ok
+&& _interrupt_selected_ok
+&& _interrupt_count_ok
+&& _interrupt_repeat_ok
+&& _interrupt_missing_flag_ok)
+{
+    show_debug_message(
+        "CONSEQUENCE INTERRUPTION TEST: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CONSEQUENCE INTERRUPTION TEST: Tests FAILED"
+    );
+
+    show_debug_message("INTERRUPTION DEBUG: Zero chance = "
+        + string(_interrupt_zero_ok));
+    show_debug_message("INTERRUPTION DEBUG: Forced event = "
+        + string(_interrupt_selected_ok));
+    show_debug_message("INTERRUPTION DEBUG: Slot unchanged = "
+        + string(_interrupt_count_ok));
+    show_debug_message("INTERRUPTION DEBUG: No repeat = "
+        + string(_interrupt_repeat_ok));
+    show_debug_message("INTERRUPTION DEBUG: Flag required = "
+        + string(_interrupt_missing_flag_ok));
+}
+
+// --------------------------------------------------
+// TEMPORARY DELAYED CONSEQUENCE STAGE TEST
+// --------------------------------------------------
+
+// Verify the consequence is eligible during
+// Manufacturer Review only when its flag exists.
+
+var _review_without_flag = get_eligible_stage_events(
+    event_library,
+    EventStage.MANUFACTURER_REVIEW,
+    CampaignDifficulty.MEDIUM,
+    [],
+    []
+);
+
+var _review_with_flag = get_eligible_stage_events(
+    event_library,
+    EventStage.MANUFACTURER_REVIEW,
+    CampaignDifficulty.MEDIUM,
+    [],
+    ["cad_changes_unverified"]
+);
+
+// Verify the Routing pool still contains PCB-0001.
+var _routing_pool_test = get_event_pool(
+    event_library,
+    EventStage.ROUTING
+);
+
+var _routing_ok = false;
+var _consequence_ok = false;
+
+if (array_length(_routing_pool_test) == 1)
+{
+    _routing_ok =
+        _routing_pool_test[0].id == "PCB-0001";
+}
+
+if (array_length(_review_with_flag) == 1)
+{
+    _consequence_ok =
+        _review_with_flag[0].id == "PCB-0002"
+        && _review_with_flag[0].is_consequence;
+}
+
+if (_routing_ok
+&& _consequence_ok
+&& array_length(_review_without_flag) == 0)
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE STAGE: PASS"
+    );
+}
+
+else
+{
+    show_debug_message(
+        "DELAYED CONSEQUENCE STAGE: FAILED"
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Routing valid = "
+        + string(_routing_ok)
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Routing pool count = "
+        + string(array_length(_routing_pool_test))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Review without flag = "
+        + string(array_length(_review_without_flag))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Review with flag = "
+        + string(array_length(_review_with_flag))
+    );
+
+    show_debug_message(
+        "DELAYED DEBUG: Consequence valid = "
+        + string(_consequence_ok)
+    );
+
+    // List all registered Manufacturer Review events
+    var _manufacturer_pool = get_event_pool(
+        event_library,
+        EventStage.MANUFACTURER_REVIEW
+    );
+
+    for (
+        var _i = 0;
+        _i < array_length(_manufacturer_pool);
+        _i++
+    )
+    {
+        show_debug_message(
+            "DELAYED DEBUG: Manufacturer event = "
+            + _manufacturer_pool[_i].id
+        );
+    }
+}
+
+
+// --------------------------------------------------
+// TEMPORARY FINAL RELEASE SIGNOFF TEST
+// --------------------------------------------------
+
+// Create an independent test campaign.
+// The active campaign is not modified.
+
+var _release_test = {
+    current_event_stage: EventStage.RELEASE,
+    campaign_event_target: 30,
+    campaign_events_completed: 30,
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: get_campaign_stage_targets(30),
+    completed_checkpoint_ids: [
+        "PLC-REVIEW-001",
+        "RTE-REVIEW-001"
+    ]
+};
+
+// TEST 1: Missing final signoff must block release
+var _release_missing_signoff =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 2: All completed requirements permit release
+array_push(
+    _release_test.completed_checkpoint_ids,
+    "REL-SIGNOFF-001"
+);
+
+var _release_approved =
+    is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 3: Incomplete Release stage must block release
+_release_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] -= 1;
+
+var _release_incomplete =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// Restore completed Release stage
+_release_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] += 1;
+
+// TEST 4: Missing Routing Review must block release
+_release_test.completed_checkpoint_ids = [
+    "PLC-REVIEW-001",
+    "REL-SIGNOFF-001"
+];
+
+var _release_missing_review =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 5: Earlier stage cannot finish campaign
+_release_test.completed_checkpoint_ids = [
+    "PLC-REVIEW-001",
+    "RTE-REVIEW-001",
+    "REL-SIGNOFF-001"
+];
+
+_release_test.current_event_stage = EventStage.ROUTING;
+
+var _release_wrong_stage =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// FINAL VALIDATION
+if (_release_missing_signoff
+&& _release_approved
+&& _release_incomplete
+&& _release_missing_review
+&& _release_wrong_stage)
+{
+    show_debug_message(
+        "FINAL SIGNOFF: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "FINAL SIGNOFF: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
 // TEMPORARY CHECKPOINT COMPLETION RECORD TEST
 // --------------------------------------------------
 
@@ -104,7 +480,7 @@ var _pipe_pool = _pipe_library.routing;
 // Create a temporary Routing Review
 var _pipe_review = variable_clone(_pipe_pool[0]);
 
-_pipe_review.id = "RTE-REVIEW-001";
+_pipe_review[$ "id"] = "RTE-REVIEW-001";
 _pipe_review.category = EventCategory.MILESTONE;
 
 array_push(_pipe_pool, _pipe_review);
@@ -209,7 +585,7 @@ var _cp_sel_pool = _cp_sel_library.routing;
 // existing test event. The real library is unchanged.
 var _cp_sel_review = variable_clone(_cp_sel_pool[0]);
 
-_cp_sel_review.id = "RTE-REVIEW-001";
+_cp_sel_review[$ "id"] = "RTE-REVIEW-001";
 _cp_sel_review.category = EventCategory.MILESTONE;
 
 array_push(_cp_sel_pool, _cp_sel_review);
@@ -403,7 +779,8 @@ else
 var _transition_test = {
     current_event_stage: EventStage.DESIGN_SETUP,
     campaign_stage_targets: get_campaign_stage_targets(30),
-    campaign_stage_events_completed: array_create(5, 0)
+    campaign_stage_events_completed: array_create(5, 0),
+	completed_checkpoint_ids: []
 };
 
 // TEST 1: Reject advancement before completion
@@ -445,6 +822,36 @@ for (
     _transition_test.campaign_stage_events_completed[
         _stage
     ] = _transition_test.campaign_stage_targets[_stage];
+	
+// Verify mandatory reviews prevent early advancement
+var _required_review = "";
+
+if (_stage == EventStage.PLACEMENT)
+{
+    _required_review = "PLC-REVIEW-001";
+}
+else if (_stage == EventStage.ROUTING)
+{
+    _required_review = "RTE-REVIEW-001";
+}
+
+if (_required_review != "")
+{
+    // The stage target is met, but the review
+    // has not been completed. Reject advancement.
+    if (advance_dynamic_campaign_stage(_transition_test)
+    || _transition_test.current_event_stage != _stage)
+    {
+        _sequence_passed = false;
+        break;
+    }
+
+    // Simulate successful review completion
+    array_push(
+        _transition_test.completed_checkpoint_ids,
+        _required_review
+    );
+}
 
     // Advance exactly one stage
     if (!advance_dynamic_campaign_stage(_transition_test)
@@ -1462,6 +1869,94 @@ required_dft = 50;
 required_sanity = 1;
 
 // --------------------------------------------------
+// EVALUATE FINAL DESIGN RELEASE OUTCOME
+// --------------------------------------------------
+
+// Returns the campaign outcome without changing
+// any player resources or campaign state.
+//
+// Shared rules for the legacy and dynamic campaigns.
+
+evaluate_release_outcome = function(
+    _dfa,
+    _dfm,
+    _dft,
+    _sanity,
+    _overdue_workdays
+)
+{
+    // All three DFX requirements are mandatory.
+    if (_dfa < required_dfa
+    || _dfm < required_dfm
+    || _dft < required_dft)
+    {
+        return CampaignOutcome.FAILURE;
+    }
+
+    // Special outcome: Design released successfully,
+    // but the engineer has zero sanity and is overdue.
+    if (_overdue_workdays > 0
+    && _sanity < required_sanity)
+    {
+        return CampaignOutcome.HALF_VICTORY;
+    }
+
+    // Full victory requires at least 1% sanity.
+    if (_sanity < required_sanity)
+    {
+        return CampaignOutcome.FAILURE;
+    }
+
+    return CampaignOutcome.VICTORY;
+};
+
+// --------------------------------------------------
+// TEMPORARY RELEASE OUTCOME REGRESSION TEST
+// --------------------------------------------------
+
+var _outcome_full = (
+    evaluate_release_outcome(50, 50, 50, 1, 0)
+    == CampaignOutcome.VICTORY
+);
+
+var _outcome_dfx_failure = (
+    evaluate_release_outcome(50, 50, 49, 80, 0)
+    == CampaignOutcome.FAILURE
+);
+
+var _outcome_half = (
+    evaluate_release_outcome(50, 50, 50, 0, 2)
+    == CampaignOutcome.HALF_VICTORY
+);
+
+var _outcome_sanity_failure = (
+    evaluate_release_outcome(50, 50, 50, 0, 0)
+    == CampaignOutcome.FAILURE
+);
+
+var _outcome_failure_precedence = (
+    evaluate_release_outcome(50, 49, 50, 0, 2)
+    == CampaignOutcome.FAILURE
+);
+
+if (_outcome_full
+&& _outcome_dfx_failure
+&& _outcome_half
+&& _outcome_sanity_failure
+&& _outcome_failure_precedence)
+{
+    show_debug_message(
+        "RELEASE OUTCOME: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "RELEASE OUTCOME: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
 // CAMPAIGN MESSAGE INITIALIZATION
 // --------------------------------------------------
 
@@ -1824,6 +2319,92 @@ apply_player_choice = function(_choice_index)
 
          game_message = "Decision applied.";
          result_message = _choice.result;
+			
+// --------------------------------------------------
+// APPLY PERSISTENT DYNAMIC EVENT CONSEQUENCES
+// --------------------------------------------------
+
+// Only dynamic encounters use project flags.
+// Preserve existing prototype choice behavior.
+
+if (is_struct(active_encounter))
+{
+    // ----------------------------------------------
+    // CLEAR PROJECT FLAGS
+    // ----------------------------------------------
+
+    if (is_array(_choice.clear_flags))
+    {
+        for (
+            var _c = 0;
+            _c < array_length(_choice.clear_flags);
+            _c++
+        )
+        {
+            var _clear_flag = _choice.clear_flags[_c];
+
+            // Search backward so removals are safe.
+            for (
+                var _f = array_length(project_flags) - 1;
+                _f >= 0;
+                _f--
+            )
+            {
+                if (project_flags[_f] == _clear_flag)
+                {
+                    array_delete(project_flags, _f, 1);
+                }
+            }
+        }
+    }
+
+    // ----------------------------------------------
+    // SET PROJECT FLAGS
+    // ----------------------------------------------
+
+    if (is_array(_choice.set_flags))
+    {
+        for (
+            var _s = 0;
+            _s < array_length(_choice.set_flags);
+            _s++
+        )
+        {
+            var _new_flag = _choice.set_flags[_s];
+
+            // Prevent duplicate flags.
+            if (!array_contains(project_flags, _new_flag))
+            {
+                array_push(project_flags, _new_flag);
+            }
+        }
+    }
+
+    // ----------------------------------------------
+    // TEMPORARY DIAGNOSTICS
+    // ----------------------------------------------
+
+    show_debug_message(
+        "DYNAMIC FLAGS: Total = "
+        + string(array_length(project_flags))
+    );
+
+    if (array_contains(
+        project_flags,
+        "cad_changes_unverified"
+    ))
+    {
+        show_debug_message(
+            "DYNAMIC FLAGS: cad_changes_unverified = SET"
+        );
+    }
+    else
+    {
+        show_debug_message(
+            "DYNAMIC FLAGS: cad_changes_unverified = NOT SET"
+        );
+    }
+}
 
          // Immediate engineering resource exhaustion check
          if (engineering_hours <= 0)
@@ -1975,6 +2556,8 @@ start_campaign = function()
 {
     // Reset all campaign-specific data
     initialize_campaign_state();
+	
+
 
 
 
@@ -2010,6 +2593,73 @@ start_campaign = function()
 // The campaign will start through the title/setup menu.
 
 initialize_campaign_state();
+
+// --------------------------------------------------
+// TEMPORARY CONSEQUENCE COUNTING TEST
+// --------------------------------------------------
+
+// Independent test data.
+// Does not modify the player's actual campaign.
+
+var _count_test = {
+    event_resolved: true,
+    active_encounter: {
+        id: "TEST-CONSEQUENCE",
+        stage: EventStage.MANUFACTURER_REVIEW,
+        is_consequence: true
+    },
+    campaign_events_completed: 0,
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// TEST 1: Record a consequence event
+var _consequence_recorded =
+    record_completed_dynamic_encounter(_count_test);
+
+// TEST 2: Consequence must not advance the campaign
+var _consequence_not_counted =
+    _count_test.campaign_events_completed == 0
+    && _count_test.campaign_stage_events_completed[
+        EventStage.MANUFACTURER_REVIEW
+    ] == 0;
+
+// TEST 3: Consequence must not be counted twice
+var _duplicate_rejected =
+    !record_completed_dynamic_encounter(_count_test);
+
+// TEST 4: Ordinary events must still count
+_count_test.active_encounter = {
+    id: "TEST-SCHEDULED",
+    stage: EventStage.MANUFACTURER_REVIEW,
+    is_consequence: false
+};
+
+var _scheduled_recorded =
+    record_completed_dynamic_encounter(_count_test);
+
+var _scheduled_counted =
+    _count_test.campaign_events_completed == 1
+    && _count_test.campaign_stage_events_completed[
+        EventStage.MANUFACTURER_REVIEW
+    ] == 1;
+
+// FINAL VALIDATION
+if (_consequence_recorded
+&& _consequence_not_counted
+&& _duplicate_rejected
+&& _scheduled_recorded
+&& _scheduled_counted)
+{
+    show_debug_message(
+        "CONSEQUENCE COUNTING: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CONSEQUENCE COUNTING: Tests FAILED"
+    );
+}
 
 // --------------------------------------------------
 // TEMPORARY STAGE EVENT SELECTION TEST

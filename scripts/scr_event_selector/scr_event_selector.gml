@@ -284,6 +284,24 @@ function select_scheduled_stage_event(_campaign)
     for (var _j = 0; _j < array_length(_eligible); _j++)
     {
         var _candidate = _eligible[_j];
+		
+// Consequence events do not occupy scheduled
+// engineering event slots.
+//
+// They will be handled separately as immediate
+// or delayed interruptions.
+
+if (variable_struct_exists(
+    _candidate,
+    "is_consequence"
+))
+{
+    if (_candidate.is_consequence)
+    {
+        continue;
+    }
+}
+
 
         // Mandatory checkpoints cannot appear early.
         if (_candidate.id == "PLC-REVIEW-001"
@@ -298,4 +316,57 @@ function select_scheduled_stage_event(_campaign)
 
     // Preserve existing weighted random selection
     return select_weighted_event(_regular_events);
+}
+
+// --------------------------------------------------
+// SELECT AN ELIGIBLE CONSEQUENCE EVENT
+// --------------------------------------------------
+
+// Finds consequence events available during the
+// current engineering stage.
+//
+// Uses existing difficulty, history, and project
+// flag eligibility rules.
+//
+// Does not select scheduled engineering events.
+// Does not modify campaign state.
+//
+// Returns undefined when no consequence is eligible.
+
+function select_stage_consequence_event(_campaign)
+{
+    var _eligible = get_eligible_stage_events(
+        _campaign.event_library,
+        _campaign.current_event_stage,
+        _campaign.selected_campaign_difficulty,
+        _campaign.played_event_ids,
+        _campaign.project_flags
+    );
+
+    var _consequences = [];
+
+    for (
+        var _i = 0;
+        _i < array_length(_eligible);
+        _i++
+    )
+    {
+        var _event = _eligible[_i];
+
+        // Only include explicitly marked consequences.
+        if (variable_struct_exists(
+            _event,
+            "is_consequence"
+        ))
+        {
+            if (_event.is_consequence)
+            {
+                array_push(_consequences, _event);
+            }
+        }
+    }
+
+    // Use the existing weighted event selector.
+    // Returns undefined if no consequence qualifies.
+    return select_weighted_event(_consequences);
 }

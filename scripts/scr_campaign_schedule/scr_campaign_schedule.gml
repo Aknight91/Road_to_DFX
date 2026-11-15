@@ -136,6 +136,20 @@ function record_completed_dynamic_encounter(_campaign)
         return false;
     }
 
+    // --------------------------------------------------
+    // CONSEQUENCE EVENTS DO NOT ADVANCE THE TIMELINE
+    // --------------------------------------------------
+
+    // An interruption can alter resources and project
+    // conditions without consuming a scheduled event slot.
+    if (variable_struct_exists(_encounter, "is_consequence")
+    && _encounter.is_consequence)
+    {
+        // Mark the event as processed exactly once.
+        _encounter.completion_recorded = true;
+        return true;
+    }
+
     // Record progress for this stage
     var _counts = _campaign.campaign_stage_events_completed;
 
@@ -148,33 +162,32 @@ function record_completed_dynamic_encounter(_campaign)
 
     // Mark this particular encounter as recorded
     _encounter.completion_recorded = true;
-	
-// --------------------------------------------------
-// RECORD COMPLETED MANDATORY CHECKPOINTS
-// --------------------------------------------------
 
-// Checkpoints are recorded only after the encounter
-// has been resolved and its completion is accepted.
 
-switch (_encounter.id)
-{
-    case "PLC-REVIEW-001":
-    case "RTE-REVIEW-001":
-    case "REL-SIGNOFF-001":
+    // --------------------------------------------------
+    // RECORD COMPLETED MANDATORY CHECKPOINTS
+    // --------------------------------------------------
 
-        if (!array_contains(
-            _campaign.completed_checkpoint_ids,
-            _encounter.id
-        ))
-        {
-            array_push(
+    // Record checkpoints only after an encounter is resolved.
+    switch (_encounter.id)
+    {
+        case "PLC-REVIEW-001":
+        case "RTE-REVIEW-001":
+        case "REL-SIGNOFF-001":
+
+            if (!array_contains(
                 _campaign.completed_checkpoint_ids,
                 _encounter.id
-            );
-        }
+            ))
+            {
+                array_push(
+                    _campaign.completed_checkpoint_ids,
+                    _encounter.id
+                );
+            }
 
-        break;
-}
+            break;
+    }
 
     return true;
 }
@@ -245,6 +258,46 @@ function advance_dynamic_campaign_stage(_campaign)
     }
 
     var _current_stage = _campaign.current_event_stage;
+
+    // --------------------------------------------------
+    // REQUIRE COMPLETED ENGINEERING REVIEWS
+    // --------------------------------------------------
+
+    var _required_review = "";
+
+    switch (_current_stage)
+    {
+        case EventStage.PLACEMENT:
+            _required_review = "PLC-REVIEW-001";
+            break;
+
+        case EventStage.ROUTING:
+            _required_review = "RTE-REVIEW-001";
+            break;
+    }
+
+    // Placement and Routing cannot advance until
+    // their mandatory reviews have been completed.
+    if (_required_review != "")
+    {
+        if (!variable_struct_exists(_campaign, "completed_checkpoint_ids"))
+        {
+            return false;
+        }
+
+        if (!is_array(_campaign.completed_checkpoint_ids))
+        {
+            return false;
+        }
+
+        if (!array_contains(
+            _campaign.completed_checkpoint_ids,
+            _required_review
+        ))
+        {
+            return false;
+        }
+    }
 
     // Release is the final engineering stage
     if (_current_stage >= EventStage.RELEASE)
@@ -327,4 +380,78 @@ function get_due_stage_checkpoint_id(_campaign)
 
     // Other stages do not require a checkpoint.
     return "";
+}
+
+// --------------------------------------------------
+// CHECK DYNAMIC CAMPAIGN RELEASE READINESS
+// --------------------------------------------------
+
+// True only when all scheduled encounters and all
+// mandatory stage reviews/signoff are completed.
+// This function does not modify campaign state.
+
+function is_dynamic_campaign_release_ready(_campaign)
+{
+    // The campaign must have reached Release.
+    if (_campaign.current_event_stage != EventStage.RELEASE)
+    {
+        return false;
+    }
+
+    var _targets = _campaign.campaign_stage_targets;
+    var _completed = _campaign.campaign_stage_events_completed;
+
+    // Reject invalid schedules.
+    if (!is_array(_targets) || !is_array(_completed))
+    {
+        return false;
+    }
+
+    if (array_length(_targets) != 5
+    || array_length(_completed) != 5)
+    {
+        return false;
+    }
+
+    // Every stage must meet its exact scheduled count.
+    var _scheduled_total = 0;
+
+    for (var _stage = EventStage.DESIGN_SETUP;
+         _stage <= EventStage.RELEASE;
+         _stage++)
+    {
+        if (_targets[_stage] < 1
+        || _completed[_stage] != _targets[_stage])
+        {
+            return false;
+        }
+
+        _scheduled_total += _targets[_stage];
+    }
+
+    // The overall completed count must match the schedule.
+    if (_scheduled_total != _campaign.campaign_event_target
+    || _campaign.campaign_events_completed
+       != _campaign.campaign_event_target)
+    {
+        return false;
+    }
+
+    // All mandatory engineering checkpoints must exist.
+    var _checkpoints = _campaign.completed_checkpoint_ids;
+
+    if (!is_array(_checkpoints))
+    {
+        return false;
+    }
+
+    return array_contains(
+        _checkpoints, "PLC-REVIEW-001"
+    )
+    && array_contains(
+        _checkpoints, "RTE-REVIEW-001"
+    )
+    && array_contains(
+        _checkpoints, "REL-SIGNOFF-001"
+    );
 }
