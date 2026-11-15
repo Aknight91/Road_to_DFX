@@ -32,6 +32,90 @@ selected_campaign_difficulty = CampaignDifficulty.NONE;
 event_library = create_event_library();
 
 // --------------------------------------------------
+// TEMPORARY FINAL RELEASE SIGNOFF TEST
+// --------------------------------------------------
+
+// Create an independent test campaign.
+// The active campaign is not modified.
+
+var _release_test = {
+    current_event_stage: EventStage.RELEASE,
+    campaign_event_target: 30,
+    campaign_events_completed: 30,
+    campaign_stage_targets: get_campaign_stage_targets(30),
+    campaign_stage_events_completed: get_campaign_stage_targets(30),
+    completed_checkpoint_ids: [
+        "PLC-REVIEW-001",
+        "RTE-REVIEW-001"
+    ]
+};
+
+// TEST 1: Missing final signoff must block release
+var _release_missing_signoff =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 2: All completed requirements permit release
+array_push(
+    _release_test.completed_checkpoint_ids,
+    "REL-SIGNOFF-001"
+);
+
+var _release_approved =
+    is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 3: Incomplete Release stage must block release
+_release_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] -= 1;
+
+var _release_incomplete =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// Restore completed Release stage
+_release_test.campaign_stage_events_completed[
+    EventStage.RELEASE
+] += 1;
+
+// TEST 4: Missing Routing Review must block release
+_release_test.completed_checkpoint_ids = [
+    "PLC-REVIEW-001",
+    "REL-SIGNOFF-001"
+];
+
+var _release_missing_review =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// TEST 5: Earlier stage cannot finish campaign
+_release_test.completed_checkpoint_ids = [
+    "PLC-REVIEW-001",
+    "RTE-REVIEW-001",
+    "REL-SIGNOFF-001"
+];
+
+_release_test.current_event_stage = EventStage.ROUTING;
+
+var _release_wrong_stage =
+    !is_dynamic_campaign_release_ready(_release_test);
+
+// FINAL VALIDATION
+if (_release_missing_signoff
+&& _release_approved
+&& _release_incomplete
+&& _release_missing_review
+&& _release_wrong_stage)
+{
+    show_debug_message(
+        "FINAL SIGNOFF: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "FINAL SIGNOFF: Tests FAILED"
+    );
+}
+
+// --------------------------------------------------
 // TEMPORARY CHECKPOINT COMPLETION RECORD TEST
 // --------------------------------------------------
 
@@ -403,7 +487,8 @@ else
 var _transition_test = {
     current_event_stage: EventStage.DESIGN_SETUP,
     campaign_stage_targets: get_campaign_stage_targets(30),
-    campaign_stage_events_completed: array_create(5, 0)
+    campaign_stage_events_completed: array_create(5, 0),
+	completed_checkpoint_ids: []
 };
 
 // TEST 1: Reject advancement before completion
@@ -445,6 +530,36 @@ for (
     _transition_test.campaign_stage_events_completed[
         _stage
     ] = _transition_test.campaign_stage_targets[_stage];
+	
+// Verify mandatory reviews prevent early advancement
+var _required_review = "";
+
+if (_stage == EventStage.PLACEMENT)
+{
+    _required_review = "PLC-REVIEW-001";
+}
+else if (_stage == EventStage.ROUTING)
+{
+    _required_review = "RTE-REVIEW-001";
+}
+
+if (_required_review != "")
+{
+    // The stage target is met, but the review
+    // has not been completed. Reject advancement.
+    if (advance_dynamic_campaign_stage(_transition_test)
+    || _transition_test.current_event_stage != _stage)
+    {
+        _sequence_passed = false;
+        break;
+    }
+
+    // Simulate successful review completion
+    array_push(
+        _transition_test.completed_checkpoint_ids,
+        _required_review
+    );
+}
 
     // Advance exactly one stage
     if (!advance_dynamic_campaign_stage(_transition_test)
@@ -1824,6 +1939,92 @@ apply_player_choice = function(_choice_index)
 
          game_message = "Decision applied.";
          result_message = _choice.result;
+			
+// --------------------------------------------------
+// APPLY PERSISTENT DYNAMIC EVENT CONSEQUENCES
+// --------------------------------------------------
+
+// Only dynamic encounters use project flags.
+// Preserve existing prototype choice behavior.
+
+if (is_struct(active_encounter))
+{
+    // ----------------------------------------------
+    // CLEAR PROJECT FLAGS
+    // ----------------------------------------------
+
+    if (is_array(_choice.clear_flags))
+    {
+        for (
+            var _c = 0;
+            _c < array_length(_choice.clear_flags);
+            _c++
+        )
+        {
+            var _clear_flag = _choice.clear_flags[_c];
+
+            // Search backward so removals are safe.
+            for (
+                var _f = array_length(project_flags) - 1;
+                _f >= 0;
+                _f--
+            )
+            {
+                if (project_flags[_f] == _clear_flag)
+                {
+                    array_delete(project_flags, _f, 1);
+                }
+            }
+        }
+    }
+
+    // ----------------------------------------------
+    // SET PROJECT FLAGS
+    // ----------------------------------------------
+
+    if (is_array(_choice.set_flags))
+    {
+        for (
+            var _s = 0;
+            _s < array_length(_choice.set_flags);
+            _s++
+        )
+        {
+            var _new_flag = _choice.set_flags[_s];
+
+            // Prevent duplicate flags.
+            if (!array_contains(project_flags, _new_flag))
+            {
+                array_push(project_flags, _new_flag);
+            }
+        }
+    }
+
+    // ----------------------------------------------
+    // TEMPORARY DIAGNOSTICS
+    // ----------------------------------------------
+
+    show_debug_message(
+        "DYNAMIC FLAGS: Total = "
+        + string(array_length(project_flags))
+    );
+
+    if (array_contains(
+        project_flags,
+        "cad_changes_unverified"
+    ))
+    {
+        show_debug_message(
+            "DYNAMIC FLAGS: cad_changes_unverified = SET"
+        );
+    }
+    else
+    {
+        show_debug_message(
+            "DYNAMIC FLAGS: cad_changes_unverified = NOT SET"
+        );
+    }
+}
 
          // Immediate engineering resource exhaustion check
          if (engineering_hours <= 0)
@@ -1975,6 +2176,8 @@ start_campaign = function()
 {
     // Reset all campaign-specific data
     initialize_campaign_state();
+	
+
 
 
 
@@ -2010,6 +2213,73 @@ start_campaign = function()
 // The campaign will start through the title/setup menu.
 
 initialize_campaign_state();
+
+// --------------------------------------------------
+// TEMPORARY CONSEQUENCE COUNTING TEST
+// --------------------------------------------------
+
+// Independent test data.
+// Does not modify the player's actual campaign.
+
+var _count_test = {
+    event_resolved: true,
+    active_encounter: {
+        id: "TEST-CONSEQUENCE",
+        stage: EventStage.MANUFACTURER_REVIEW,
+        is_consequence: true
+    },
+    campaign_events_completed: 0,
+    campaign_stage_events_completed: array_create(5, 0)
+};
+
+// TEST 1: Record a consequence event
+var _consequence_recorded =
+    record_completed_dynamic_encounter(_count_test);
+
+// TEST 2: Consequence must not advance the campaign
+var _consequence_not_counted =
+    _count_test.campaign_events_completed == 0
+    && _count_test.campaign_stage_events_completed[
+        EventStage.MANUFACTURER_REVIEW
+    ] == 0;
+
+// TEST 3: Consequence must not be counted twice
+var _duplicate_rejected =
+    !record_completed_dynamic_encounter(_count_test);
+
+// TEST 4: Ordinary events must still count
+_count_test.active_encounter = {
+    id: "TEST-SCHEDULED",
+    stage: EventStage.MANUFACTURER_REVIEW,
+    is_consequence: false
+};
+
+var _scheduled_recorded =
+    record_completed_dynamic_encounter(_count_test);
+
+var _scheduled_counted =
+    _count_test.campaign_events_completed == 1
+    && _count_test.campaign_stage_events_completed[
+        EventStage.MANUFACTURER_REVIEW
+    ] == 1;
+
+// FINAL VALIDATION
+if (_consequence_recorded
+&& _consequence_not_counted
+&& _duplicate_rejected
+&& _scheduled_recorded
+&& _scheduled_counted)
+{
+    show_debug_message(
+        "CONSEQUENCE COUNTING: All tests = PASS"
+    );
+}
+else
+{
+    show_debug_message(
+        "CONSEQUENCE COUNTING: Tests FAILED"
+    );
+}
 
 // --------------------------------------------------
 // TEMPORARY STAGE EVENT SELECTION TEST

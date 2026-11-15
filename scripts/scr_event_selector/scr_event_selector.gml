@@ -284,6 +284,24 @@ function select_scheduled_stage_event(_campaign)
     for (var _j = 0; _j < array_length(_eligible); _j++)
     {
         var _candidate = _eligible[_j];
+		
+// Consequence events do not occupy scheduled
+// engineering event slots.
+//
+// They will be handled separately as immediate
+// or delayed interruptions.
+
+if (variable_struct_exists(
+    _candidate,
+    "is_consequence"
+))
+{
+    if (_candidate.is_consequence)
+    {
+        continue;
+    }
+}
+
 
         // Mandatory checkpoints cannot appear early.
         if (_candidate.id == "PLC-REVIEW-001"

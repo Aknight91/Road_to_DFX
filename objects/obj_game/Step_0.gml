@@ -470,6 +470,52 @@ if (keyboard_check_pressed(ord("D"))
     debug_panel_open = !debug_panel_open;
 }
 
+// --------------------------------------------------
+// TEMPORARY DYNAMIC ENCOUNTER PREVIEW - F8
+// --------------------------------------------------
+
+// Development-only test for the new event system.
+// Normal campaigns continue using the four-event
+// prototype unless F8 is pressed.
+//
+// This shortcut will be removed after integration.
+
+if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.CHOOSING
+&& keyboard_check_pressed(vk_f8)
+&& !is_struct(active_encounter))
+{
+    // Save the current stage in case selection fails.
+    var _previous_stage = current_event_stage;
+
+    // Routing currently contains our first dynamic event.
+    current_event_stage = EventStage.ROUTING;
+
+    if (begin_scheduled_campaign_encounter(id))
+    {
+        // Rebuild the buttons using the selected event.
+        refresh_choice_buttons();
+
+        // Clear messages from the prototype event.
+        game_message = "";
+        result_message = "";
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Active event = "
+            + active_encounter.id
+        );
+    }
+    else
+    {
+        // Do not change the stage if selection fails.
+        current_event_stage = _previous_stage;
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Event selection failed"
+        );
+    }
+}
+
 
 // --------------------------------------------------
 // PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
@@ -667,7 +713,97 @@ if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
 && continue_requested)
 {
  
-	if (current_event_index < array_length(design_events) - 1)
+	
+
+if (is_struct(active_encounter))
+{
+    // Record the resolved dynamic encounter once
+    if (record_completed_dynamic_encounter(id))
+    {
+        var _completed_event_id = active_encounter.id;
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completed event = "
+            + _completed_event_id
+        );
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completed count = "
+            + string(campaign_events_completed)
+        );
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Routing completed = "
+            + string(
+                campaign_stage_events_completed[
+                    EventStage.ROUTING
+                ]
+            )
+        );
+
+        // Clear the completed encounter before
+        // attempting to select another one.
+        active_encounter = undefined;
+
+        // ------------------------------------------
+        // AUTOMATIC DYNAMIC EVENT SELECTION
+        // ------------------------------------------
+
+        if (begin_scheduled_campaign_encounter(id))
+        {
+            // Another eligible dynamic event exists.
+            // Keep the current engineering stage.
+
+            show_debug_message(
+                "DYNAMIC PREVIEW: Next event = "
+                + active_encounter.id
+            );
+        }
+        else
+        {
+            // No eligible dynamic event is available.
+            // Return to the existing prototype.
+
+            current_event_stage = EventStage.DESIGN_SETUP;
+
+            show_debug_message(
+                "DYNAMIC PREVIEW: No further events available"
+            );
+
+            show_debug_message(
+                "DYNAMIC PREVIEW: Returning to prototype"
+            );
+        }
+
+        // Return gameplay to the CHOOSING phase
+        event_resolved = false;
+
+        // Clear the previous encounter's messages
+        game_message = "";
+        result_message = "";
+
+        // Reset the results display
+        reset_result_scroll_state();
+
+        // Rebuild buttons for whichever event
+        // is now active.
+        refresh_choice_buttons();
+    }
+    else
+    {
+        // Preserve the encounter if recording fails
+        game_message =
+            "DYNAMIC PREVIEW: Completion not recorded.";
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completion recording failed"
+        );
+    }
+}
+
+
+else if (current_event_index < array_length(design_events) - 1)
+
 	{
 	    current_event_index += 1;
 
