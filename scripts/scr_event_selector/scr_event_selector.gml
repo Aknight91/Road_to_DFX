@@ -209,13 +209,17 @@ function select_next_stage_event(
 // Returns undefined if no valid event is available.
 // Does not change campaign state or event history.
 
+
 function select_scheduled_stage_event(_campaign)
 {
     var _stage = _campaign.current_event_stage;
     var _targets = _campaign.campaign_stage_targets;
     var _completed = _campaign.campaign_stage_events_completed;
 
-    // Reject invalid schedule data
+    // --------------------------------------------------
+    // VALIDATE CAMPAIGN SCHEDULE
+    // --------------------------------------------------
+
     if (!is_array(_targets) || !is_array(_completed))
     {
         return undefined;
@@ -229,7 +233,6 @@ function select_scheduled_stage_event(_campaign)
         return undefined;
     }
 
-    // Do not select events beyond the stage target
     if (_targets[_stage] < 1
     || _completed[_stage] < 0
     || _completed[_stage] >= _targets[_stage])
@@ -237,12 +240,14 @@ function select_scheduled_stage_event(_campaign)
         return undefined;
     }
 
-    // Determine whether a mandatory review is due
+    // --------------------------------------------------
+    // GET ELIGIBLE EVENTS
+    // --------------------------------------------------
+
     var _checkpoint_id = get_due_stage_checkpoint_id(
         _campaign
     );
 
-    // Apply the existing eligibility rules
     var _eligible = get_eligible_stage_events(
         _campaign.event_library,
         _stage,
@@ -251,9 +256,9 @@ function select_scheduled_stage_event(_campaign)
         _campaign.project_flags
     );
 
-    // ----------------------------------------------
-    // MANDATORY CHECKPOINT SELECTION
-    // ----------------------------------------------
+    // --------------------------------------------------
+    // MANDATORY CHECKPOINTS
+    // --------------------------------------------------
 
     if (_checkpoint_id != "")
     {
@@ -265,8 +270,6 @@ function select_scheduled_stage_event(_campaign)
             }
         }
 
-        // Never replace a missing mandatory checkpoint
-        // with a random engineering event.
         show_debug_message(
             "CHECKPOINT SELECTOR: Missing or ineligible "
             + _checkpoint_id
@@ -275,33 +278,59 @@ function select_scheduled_stage_event(_campaign)
         return undefined;
     }
 
-    // ----------------------------------------------
-    // ORDINARY EVENT SELECTION
-    // ----------------------------------------------
+    // --------------------------------------------------
+    // FIND THE PREVIOUS EVENT
+    // --------------------------------------------------
+
+    var _last_event_id = "";
+
+    if (is_array(_campaign.played_event_ids))
+    {
+        var _history_count = array_length(
+            _campaign.played_event_ids
+        );
+
+        if (_history_count > 0)
+        {
+            _last_event_id = _campaign.played_event_ids[
+                _history_count - 1
+            ];
+        }
+    }
+
+    // --------------------------------------------------
+    // EVENT SPACING RULES
+    // --------------------------------------------------
+
+    // Each pair identifies two events that must
+    // not appear immediately after one another.
+    // The restriction works in both directions.
+
+    var _spacing_pairs = [
+        ["PCB-0003", "PCB-0004"]
+    ];
+
+    // --------------------------------------------------
+    // FILTER ORDINARY EVENTS
+    // --------------------------------------------------
 
     var _regular_events = [];
 
     for (var _j = 0; _j < array_length(_eligible); _j++)
     {
         var _candidate = _eligible[_j];
-		
-// Consequence events do not occupy scheduled
-// engineering event slots.
-//
-// They will be handled separately as immediate
-// or delayed interruptions.
 
-if (variable_struct_exists(
-    _candidate,
-    "is_consequence"
-))
-{
-    if (_candidate.is_consequence)
-    {
-        continue;
-    }
-}
-
+        // Consequences have their own selection system.
+        if (variable_struct_exists(
+            _candidate,
+            "is_consequence"
+        ))
+        {
+            if (_candidate.is_consequence)
+            {
+                continue;
+            }
+        }
 
         // Mandatory checkpoints cannot appear early.
         if (_candidate.id == "PLC-REVIEW-001"
@@ -311,12 +340,59 @@ if (variable_struct_exists(
             continue;
         }
 
+        // --------------------------------------------------
+        // APPLY EVENT SPACING RULES
+        // --------------------------------------------------
+
+        var _spacing_blocked = false;
+
+        for (
+            var _p = 0;
+            _p < array_length(_spacing_pairs);
+            _p++
+        )
+        {
+            var _pair = _spacing_pairs[_p];
+
+            if (
+                (_last_event_id == _pair[0]
+                && _candidate.id == _pair[1])
+                ||
+                (_last_event_id == _pair[1]
+                && _candidate.id == _pair[0])
+            )
+            {
+                _spacing_blocked = true;
+                break;
+            }
+        }
+
+        if (_spacing_blocked)
+        {
+            show_debug_message(
+                "EVENT SPACING: Blocked "
+                + _last_event_id
+                + " -> "
+                + _candidate.id
+            );
+
+            continue;
+        }
+
+        // Candidate passed all scheduling rules.
         array_push(_regular_events, _candidate);
     }
 
-    // Preserve existing weighted random selection
+    // --------------------------------------------------
+    // RANDOM EVENT SELECTION
+    // --------------------------------------------------
+
+    // Never force a blocked event into the schedule.
+    // An empty pool returns undefined safely.
+
     return select_weighted_event(_regular_events);
 }
+
 
 // --------------------------------------------------
 // SELECT AN ELIGIBLE CONSEQUENCE EVENT
