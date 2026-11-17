@@ -39,6 +39,7 @@
     {"id":{"name":"scr_event_scrollbar_layout","path":"scripts/scr_event_scrollbar_layout/scr_event_scrollbar_layout.yy",},},
     {"id":{"name":"scr_event_selector","path":"scripts/scr_event_selector/scr_event_selector.yy",},},
     {"id":{"name":"scr_events_pcb_design","path":"scripts/scr_events_pcb_design/scr_events_pcb_design.yy",},},
+    {"id":{"name":"scr_events_pcb_placement","path":"scripts/scr_events_pcb_placement/scr_events_pcb_placement.yy",},},
     {"id":{"name":"scr_gameplay_choice_renderer","path":"scripts/scr_gameplay_choice_renderer/scr_gameplay_choice_renderer.yy",},},
     {"id":{"name":"scr_gameplay_debug_renderer","path":"scripts/scr_gameplay_debug_renderer/scr_gameplay_debug_renderer.yy",},},
     {"id":{"name":"scr_gameplay_event_renderer","path":"scripts/scr_gameplay_event_renderer/scr_gameplay_event_renderer.yy",},},

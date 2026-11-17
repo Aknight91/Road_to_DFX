@@ -1,3 +1,4 @@
+
 /// @description Stage-based event library for Road to DFX
 
 // --------------------------------------------------
@@ -14,25 +15,28 @@ enum EventStage
 }
 
 
-
 // --------------------------------------------------
 // CREATE EVENT LIBRARY
 // --------------------------------------------------
 
-// Organizes PCB events into their engineering stages.
-// Consequence events remain in their appropriate
-// stage pool but are not scheduled milestones.
-
-
 function create_event_library()
 {
+    // Retrieve registered PCB events.
     var _pcb_events = create_pcb_design_event_pool();
 
-    var _design_setup_events = [];
-	var _routing_events = [];
-	var _manufacturer_events = [];
+    // Retrieve Placement-stage events separately.
+    var _placement_events =
+        create_pcb_placement_event_pool();
 
-    // Organize each event by its engineering stage.
+    // Create event arrays for existing stages.
+    var _design_setup_events = [];
+    var _routing_events = [];
+    var _manufacturer_events = [];
+
+    // --------------------------------------------------
+    // ORGANIZE EXISTING PCB DESIGN EVENTS
+    // --------------------------------------------------
+
     for (
         var _i = 0;
         _i < array_length(_pcb_events);
@@ -43,30 +47,47 @@ function create_event_library()
 
         switch (_event.stage)
         {
-			case EventStage.DESIGN_SETUP:
-			array_push(_design_setup_events, _event);
-			break;
-            
-			case EventStage.ROUTING:
-                array_push(_routing_events, _event);
+            case EventStage.DESIGN_SETUP:
+
+                array_push(
+                    _design_setup_events,
+                    _event
+                );
+
+                break;
+
+            case EventStage.ROUTING:
+
+                array_push(
+                    _routing_events,
+                    _event
+                );
+
                 break;
 
             case EventStage.MANUFACTURER_REVIEW:
-                array_push(_manufacturer_events, _event);
+
+                array_push(
+                    _manufacturer_events,
+                    _event
+                );
+
                 break;
         }
     }
 
+    // --------------------------------------------------
+    // RETURN COMPLETE STAGE LIBRARY
+    // --------------------------------------------------
+
     return {
         design_setup: _design_setup_events,
-        placement: [],
+        placement: _placement_events,
         routing: _routing_events,
         manufacturer_review: _manufacturer_events,
         release: []
     };
 }
-
-
 
 
 // --------------------------------------------------
