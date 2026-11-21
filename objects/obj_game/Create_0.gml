@@ -1312,66 +1312,8 @@ drc_hunt_frames_remaining = 0;
 // Stores the active bowties for each hunting session.
 drc_hunt_targets = [];
 
-// Create a fresh group of bowties.
-reset_drc_hunt_targets = function()
-{
-    drc_hunt_targets = [];
+// Target initialization is handled by scr_drc_hunt_targets.
 
-    // Initial target positions and velocities.
-    var _starting_targets = [
-        {
-            x: 210,
-            y: 220,
-            dx: 1.8,
-            dy: 1.2,
-            active: true
-        },
-        {
-            x: 470,
-            y: 310,
-            dx: -2.1,
-            dy: 1.4,
-            active: true
-        },
-        {
-            x: 730,
-            y: 190,
-            dx: 1.6,
-            dy: -1.1,
-            active: true
-        }
-    ];
-
-    // Never create more targets than can be cleared.
-    var _target_count = min(
-        array_length(_starting_targets),
-        drc_hunt_max_hits,
-        drc_violations
-    );
-
-    
-for (var _i = 0; _i < _target_count; _i++)
-{
-    // Retrieve the target.
-    var _target = _starting_targets[_i];
-
-    // Every bowtie starts in its normal scurrying state.
-    _target.behavior = "scurry";
-
-    // Duration remaining in a temporary behavior.
-    // Zero means no temporary behavior is active.
-    _target.behavior_frames_remaining = 0;
-
-    // Add the initialized target to the hunt.
-    array_push(drc_hunt_targets, _target);
-}
-
-
-    show_debug_message(
-        "DRC HUNT: Targets initialized = "
-        + string(array_length(drc_hunt_targets))
-    );
-};
 
 
 

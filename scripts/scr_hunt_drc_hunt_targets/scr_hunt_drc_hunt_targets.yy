@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_hunt_drc_hunt_targets",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_hunt_drc_hunt_targets",
+  "parent":{
+    "name":"DRC_Hunting",
+    "path":"folders/04_Activities/DRC_Hunting.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

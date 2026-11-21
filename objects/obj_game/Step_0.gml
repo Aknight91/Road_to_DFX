@@ -39,47 +39,9 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
     {
         if (is_struct(active_encounter))
         {
-            // One hunt per encounter, with enough
-            // engineering time left to continue work.
-            if (drc_hunt_last_event_id != active_encounter.id
-            && drc_violations > 0
-            && engineering_hours > drc_hunt_cost_hours)
+            // Session rules and costs live in scr_drc_hunt_session.
+            if (drc_hunt_begin_session(id))
             {
-                // Mark this encounter's hunt as used.
-                drc_hunt_last_event_id = active_encounter.id;
-
-                // Charge engineering time.
-                engineering_hours -= drc_hunt_cost_hours;
-
-                // Advance the existing project calendar.
-                advance_project_work_hours(drc_hunt_cost_hours);
-
-                days_remaining = get_workdays_until_deadline();
-
-                // Apply any overdue schedule penalties.
-                apply_overdue_sanity_penalty();
-
-                // If overdue penalties cause Sanity to
-                // reach zero, start the existing crisis.
-                if (sanity <= 0 && !sanity_zero_active)
-                {
-                    sanity_zero_active = true;
-                    sanity_zero_turns_remaining = 3;
-                    software_instability = 5;
-                }
-
-                // Begin a fresh hunting session.
-                drc_hunt_shots = 0;
-                drc_hunt_hits = 0;
-				
-				// Start the 20-second hunting timer.
-				drc_hunt_frames_remaining =
-				    drc_hunt_duration_seconds
-				    * game_get_speed(gamespeed_fps);
-				
-				// Prepare multiple bowties for this session.
-				reset_drc_hunt_targets();
-
                 screen_manager.navigate_to(ScreenId.DRC_HUNT);
 
                 show_debug_message(
@@ -107,12 +69,15 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
 
 
 if (_screen_at_step_start == ScreenId.DRC_HUNT
-&& screen_manager.can_receive_input(ScreenId.DRC_HUNT)
-&& drc_hunt_frames_remaining > 0
-&& drc_hunt_hits < drc_hunt_max_hits
-&& drc_violations > 0)
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT))
 {
-    drc_hunt_frames_remaining -= 1;
+    // Timer stopping rules live in scr_drc_hunt_session.
+    drc_hunt_frames_remaining = drc_hunt_tick_timer(
+        drc_hunt_frames_remaining,
+        drc_hunt_hits,
+        drc_hunt_max_hits,
+        drc_violations
+    );
 }
 
 
@@ -133,101 +98,8 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
     // MOVE ALL ACTIVE BOWTIES
     // ----------------------------------------------
 
-    for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
-    {
-        var _target = drc_hunt_targets[_i];
-
-        if (_target.active)
-        {
-            // ----------------------------------------------
-            // PAUSED BEHAVIOR
-            // ----------------------------------------------
-
-            if (_target.behavior == "pause")
-            {
-                _target.behavior_frames_remaining -= 1;
-
-                if (_target.behavior_frames_remaining <= 0)
-                {
-                    _target.behavior = "scurry";
-                    _target.behavior_frames_remaining = 0;
-                }
-            }
-
-            // ----------------------------------------------
-            // HIDDEN BEHAVIOR
-            // ----------------------------------------------
-
-            else if (_target.behavior == "hide")
-            {
-                _target.behavior_frames_remaining -= 1;
-
-                if (_target.behavior_frames_remaining <= 0)
-                {
-                    // Reappear somewhere else on the PCB.
-                    _target.x = irandom_range(110, 850);
-                    _target.y = irandom_range(185, 340);
-
-                    _target.behavior = "scurry";
-                    _target.behavior_frames_remaining = 0;
-                }
-            }
-
-            // ----------------------------------------------
-            // SCURRYING BEHAVIOR
-            // ----------------------------------------------
-
-            else
-            {
-                // Occasionally disappear.
-                if (irandom(479) == 0)
-                {
-                    _target.behavior = "hide";
-                    _target.behavior_frames_remaining =
-                        irandom_range(24, 42);
-                }
-                // Occasionally stop briefly.
-                else if (irandom(239) == 0)
-                {
-                    _target.behavior = "pause";
-                    _target.behavior_frames_remaining =
-                        irandom_range(18, 30);
-                }
-                else
-                {
-                    // Occasionally change direction and speed.
-                    if (irandom(89) == 0)
-                    {
-                        var _angle = random(360);
-                        var _speed = random_range(1.3, 2.7);
-
-                        _target.dx = lengthdir_x(_speed, _angle);
-                        _target.dy = lengthdir_y(_speed, _angle);
-                    }
-
-                    _target.x += _target.dx;
-                    _target.y += _target.dy;
-
-                    // Horizontal boundaries.
-                    if (_target.x <= 90 || _target.x >= 870)
-                    {
-                        _target.dx = -_target.dx;
-                        _target.x = clamp(_target.x, 90, 870);
-                    }
-
-                    // Vertical boundaries.
-                    if (_target.y <= 170 || _target.y >= 355)
-                    {
-                        _target.dy = -_target.dy;
-                        _target.y = clamp(_target.y, 170, 355);
-                    }
-                }
-            }
-
-            // Save all position and behavior changes.
-            drc_hunt_targets[_i] = _target;
-        }
-    }
+    // Movement and behavior logic lives in scr_drc_hunt_update.
+    drc_hunt_targets = drc_hunt_update_targets(drc_hunt_targets);
 
     // ----------------------------------------------
     // SHOOTING INPUT
@@ -235,63 +107,35 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
 
     if (mouse_check_button_pressed(mb_left))
     {
-        var _shot_x = device_mouse_x_to_gui(0);
-        var _shot_y = device_mouse_y_to_gui(0);
+        // Hit detection lives in scr_drc_hunt_shooting.
+        var _shot_result = drc_hunt_process_shot(
+            drc_hunt_targets,
+            device_mouse_x_to_gui(0),
+            device_mouse_y_to_gui(0)
+        );
 
-        // Only count shots inside the PCB.
-        if (point_in_rectangle(
-            _shot_x,
-            _shot_y,
-            60, 115, 900, 425
-        ))
+        drc_hunt_targets = _shot_result.targets;
+
+        // Count only clicks inside the PCB.
+        if (_shot_result.fired)
         {
             drc_hunt_shots += 1;
+        }
 
-            // Check every active bowtie for a hit.
-            for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
-            {
-                var _target = drc_hunt_targets[_i];
+        if (_shot_result.hit_index != -1)
+        {
+            // Register exactly one hit.
+            drc_hunt_hits += 1;
 
-                
-			if (!_target.active || _target.behavior == "hide")
-			{
-			    continue;
-			}
+            // Shared campaign function removes one DRC and adjusts DFM.
+            apply_manufacturing_changes(-1, 0, 0);
 
-
-                var _hit = point_in_rectangle(
-                    _shot_x,
-                    _shot_y,
-                    _target.x - 20,
-                    _target.y - 13,
-                    _target.x + 20,
-                    _target.y + 13
-                );
-
-                if (_hit)
-                {
-                    // Remove this bowtie.
-                    _target.active = false;
-                    drc_hunt_targets[_i] = _target;
-
-                    // Register exactly one hit.
-                    drc_hunt_hits += 1;
-
-                    // Remove exactly one real DRC.
-                    // The shared function adjusts DFM.
-                    apply_manufacturing_changes(-1, 0, 0);
-
-                    show_debug_message(
-                        "DRC HUNT: Target "
-                        + string(_i)
-                        + " destroyed. DRCs remaining = "
-                        + string(drc_violations)
-                    );
-
-                    // One shot can destroy only one target.
-                    break;
-                }
-            }
+            show_debug_message(
+                "DRC HUNT: Target "
+                + string(_shot_result.hit_index)
+                + " destroyed. DRCs remaining = "
+                + string(drc_violations)
+            );
         }
     }
 }
