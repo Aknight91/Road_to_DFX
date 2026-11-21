@@ -11,8 +11,8 @@
   "name":"obj_game",
   "overriddenProperties":[],
   "parent":{
-    "name":"Road_to_DFX",
-    "path":"Road_to_DFX.yyp",
+    "name":"Controllers",
+    "path":"folders/01_Core/Controllers.yy",
   },
   "parentObjectId":null,
   "persistent":false,

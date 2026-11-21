@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_event_schema",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Event_Engine",
+    "path":"folders/02_Campaign/Event_Engine.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

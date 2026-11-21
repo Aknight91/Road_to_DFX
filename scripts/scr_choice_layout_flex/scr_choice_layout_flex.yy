@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_choice_layout_flex",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Layouts",
+    "path":"folders/03_User_Interface/Layouts.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

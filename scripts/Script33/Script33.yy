@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"Script33",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"99_To_Review",
+    "path":"folders/99_To_Review.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

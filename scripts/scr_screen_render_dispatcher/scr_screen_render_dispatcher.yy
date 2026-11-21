@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_screen_render_dispatcher",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Screen_System",
+    "path":"folders/01_Core/Screen_System.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

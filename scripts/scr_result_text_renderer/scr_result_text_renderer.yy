@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_result_text_renderer",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Gameplay_UI",
+    "path":"folders/03_User_Interface/Gameplay_UI.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

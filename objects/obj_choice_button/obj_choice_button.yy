@@ -10,8 +10,8 @@
   "name":"obj_choice_button",
   "overriddenProperties":[],
   "parent":{
-    "name":"Road_to_DFX",
-    "path":"Road_to_DFX.yyp",
+    "name":"UI_Objects",
+    "path":"folders/03_User_Interface/UI_Objects.yy",
   },
   "parentObjectId":null,
   "persistent":false,

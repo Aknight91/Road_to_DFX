@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_event_scrollbar_layout",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_event_scrollbar_layout",
+  "parent":{
+    "name":"Scripts",
+    "path":"folders/Scripts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

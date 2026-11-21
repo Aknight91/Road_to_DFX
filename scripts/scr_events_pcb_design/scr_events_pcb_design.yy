@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_events_pcb_design",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Event_Content",
+    "path":"folders/02_Campaign/Event_Content.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

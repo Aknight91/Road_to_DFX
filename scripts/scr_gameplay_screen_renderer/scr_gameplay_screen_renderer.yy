@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_gameplay_screen_renderer",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Screen_Renderers",
+    "path":"folders/03_User_Interface/Screen_Renderers.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

@@ -17,8 +17,8 @@
   ],
   "name":"Room1",
   "parent":{
-    "name":"Road_to_DFX",
-    "path":"Road_to_DFX.yyp",
+    "name":"07_Rooms",
+    "path":"folders/07_Rooms.yy",
   },
   "parentRoom":null,
   "physicsSettings":{

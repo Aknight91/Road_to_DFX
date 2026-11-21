@@ -5,8 +5,8 @@
   "isDnD":false,
   "name":"scr_campaign_schedule",
   "parent":{
-    "name":"Scripts",
-    "path":"folders/Scripts.yy",
+    "name":"Rules",
+    "path":"folders/02_Campaign/Rules.yy",
   },
   "resourceType":"GMScript",
   "resourceVersion":"2.0",

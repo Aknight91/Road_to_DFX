@@ -1,0 +1,1198 @@
+
+/// @description Decisions, progression, and campaign outcomes
+
+// --------------------------------------------------
+// CAPTURE SCREEN AT START OF FRAME
+// --------------------------------------------------
+
+// Prevent a single input from affecting two screens
+// when navigation occurs during the same Step Event.
+
+var _screen_at_step_start =
+    screen_manager.get_current_screen();
+
+// Capture the overlay active before input is processed.
+// Prevents one click from affecting multiple overlay states.
+
+var _overlay_at_step_start =
+    screen_manager.get_top_overlay();
+
+
+// --------------------------------------------------
+// ENTER DRC HUNT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.CHOOSING
+&& !debug_panel_open
+&& mouse_check_button_pressed(mb_left))
+{
+    var _hunt_mouse_x = device_mouse_x_to_gui(0);
+    var _hunt_mouse_y = device_mouse_y_to_gui(0);
+
+    if (point_in_rectangle(
+        _hunt_mouse_x,
+        _hunt_mouse_y,
+        35, 480, 305, 520
+    ))
+    {
+        if (is_struct(active_encounter))
+        {
+            // One hunt per encounter, with enough
+            // engineering time left to continue work.
+            if (drc_hunt_last_event_id != active_encounter.id
+            && drc_violations > 0
+            && engineering_hours > drc_hunt_cost_hours)
+            {
+                // Mark this encounter's hunt as used.
+                drc_hunt_last_event_id = active_encounter.id;
+
+                // Charge engineering time.
+                engineering_hours -= drc_hunt_cost_hours;
+
+                // Advance the existing project calendar.
+                advance_project_work_hours(drc_hunt_cost_hours);
+
+                days_remaining = get_workdays_until_deadline();
+
+                // Apply any overdue schedule penalties.
+                apply_overdue_sanity_penalty();
+
+                // If overdue penalties cause Sanity to
+                // reach zero, start the existing crisis.
+                if (sanity <= 0 && !sanity_zero_active)
+                {
+                    sanity_zero_active = true;
+                    sanity_zero_turns_remaining = 3;
+                    software_instability = 5;
+                }
+
+                // Begin a fresh hunting session.
+                drc_hunt_shots = 0;
+                drc_hunt_hits = 0;
+				
+				// Start the 20-second hunting timer.
+				drc_hunt_frames_remaining =
+				    drc_hunt_duration_seconds
+				    * game_get_speed(gamespeed_fps);
+				
+				// Prepare multiple bowties for this session.
+				reset_drc_hunt_targets();
+
+                screen_manager.navigate_to(ScreenId.DRC_HUNT);
+
+                show_debug_message(
+                    "DRC HUNT: Session started. Hours remaining = "
+                    + string(engineering_hours)
+                );
+            }
+            else
+            {
+                show_debug_message(
+                    "DRC HUNT: Unavailable for this encounter."
+                );
+            }
+        }
+
+        // Prevent the click reaching other controls.
+        mouse_clear(mb_left);
+    }
+}
+
+
+// --------------------------------------------------
+// DRC HUNT - SESSION TIMER
+// --------------------------------------------------
+
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT)
+&& drc_hunt_frames_remaining > 0
+&& drc_hunt_hits < drc_hunt_max_hits
+&& drc_violations > 0)
+{
+    drc_hunt_frames_remaining -= 1;
+}
+
+
+
+// --------------------------------------------------
+// DRC HUNT - MOVEMENT AND SHOOTING
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT)
+&& drc_hunt_frames_remaining > 0
+&& drc_hunt_hits < drc_hunt_max_hits
+&& drc_violations > 0)
+{
+    
+    
+    // ----------------------------------------------
+    // MOVE ALL ACTIVE BOWTIES
+    // ----------------------------------------------
+
+    for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
+    {
+        var _target = drc_hunt_targets[_i];
+
+        if (_target.active)
+        {
+            // ----------------------------------------------
+            // PAUSED BEHAVIOR
+            // ----------------------------------------------
+
+            if (_target.behavior == "pause")
+            {
+                _target.behavior_frames_remaining -= 1;
+
+                if (_target.behavior_frames_remaining <= 0)
+                {
+                    _target.behavior = "scurry";
+                    _target.behavior_frames_remaining = 0;
+                }
+            }
+
+            // ----------------------------------------------
+            // HIDDEN BEHAVIOR
+            // ----------------------------------------------
+
+            else if (_target.behavior == "hide")
+            {
+                _target.behavior_frames_remaining -= 1;
+
+                if (_target.behavior_frames_remaining <= 0)
+                {
+                    // Reappear somewhere else on the PCB.
+                    _target.x = irandom_range(110, 850);
+                    _target.y = irandom_range(185, 340);
+
+                    _target.behavior = "scurry";
+                    _target.behavior_frames_remaining = 0;
+                }
+            }
+
+            // ----------------------------------------------
+            // SCURRYING BEHAVIOR
+            // ----------------------------------------------
+
+            else
+            {
+                // Occasionally disappear.
+                if (irandom(479) == 0)
+                {
+                    _target.behavior = "hide";
+                    _target.behavior_frames_remaining =
+                        irandom_range(24, 42);
+                }
+                // Occasionally stop briefly.
+                else if (irandom(239) == 0)
+                {
+                    _target.behavior = "pause";
+                    _target.behavior_frames_remaining =
+                        irandom_range(18, 30);
+                }
+                else
+                {
+                    // Occasionally change direction and speed.
+                    if (irandom(89) == 0)
+                    {
+                        var _angle = random(360);
+                        var _speed = random_range(1.3, 2.7);
+
+                        _target.dx = lengthdir_x(_speed, _angle);
+                        _target.dy = lengthdir_y(_speed, _angle);
+                    }
+
+                    _target.x += _target.dx;
+                    _target.y += _target.dy;
+
+                    // Horizontal boundaries.
+                    if (_target.x <= 90 || _target.x >= 870)
+                    {
+                        _target.dx = -_target.dx;
+                        _target.x = clamp(_target.x, 90, 870);
+                    }
+
+                    // Vertical boundaries.
+                    if (_target.y <= 170 || _target.y >= 355)
+                    {
+                        _target.dy = -_target.dy;
+                        _target.y = clamp(_target.y, 170, 355);
+                    }
+                }
+            }
+
+            // Save all position and behavior changes.
+            drc_hunt_targets[_i] = _target;
+        }
+    }
+
+    // ----------------------------------------------
+    // SHOOTING INPUT
+    // ----------------------------------------------
+
+    if (mouse_check_button_pressed(mb_left))
+    {
+        var _shot_x = device_mouse_x_to_gui(0);
+        var _shot_y = device_mouse_y_to_gui(0);
+
+        // Only count shots inside the PCB.
+        if (point_in_rectangle(
+            _shot_x,
+            _shot_y,
+            60, 115, 900, 425
+        ))
+        {
+            drc_hunt_shots += 1;
+
+            // Check every active bowtie for a hit.
+            for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
+            {
+                var _target = drc_hunt_targets[_i];
+
+                
+			if (!_target.active || _target.behavior == "hide")
+			{
+			    continue;
+			}
+
+
+                var _hit = point_in_rectangle(
+                    _shot_x,
+                    _shot_y,
+                    _target.x - 20,
+                    _target.y - 13,
+                    _target.x + 20,
+                    _target.y + 13
+                );
+
+                if (_hit)
+                {
+                    // Remove this bowtie.
+                    _target.active = false;
+                    drc_hunt_targets[_i] = _target;
+
+                    // Register exactly one hit.
+                    drc_hunt_hits += 1;
+
+                    // Remove exactly one real DRC.
+                    // The shared function adjusts DFM.
+                    apply_manufacturing_changes(-1, 0, 0);
+
+                    show_debug_message(
+                        "DRC HUNT: Target "
+                        + string(_i)
+                        + " destroyed. DRCs remaining = "
+                        + string(drc_violations)
+                    );
+
+                    // One shot can destroy only one target.
+                    break;
+                }
+            }
+        }
+    }
+}
+
+// --------------------------------------------------
+// RETURN FROM DRC HUNT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT))
+{
+    var _hunt_return = keyboard_check_pressed(vk_escape);
+
+    if (mouse_check_button_pressed(mb_left))
+    {
+        var _return_x = device_mouse_x_to_gui(0);
+        var _return_y = device_mouse_y_to_gui(0);
+
+        if (point_in_rectangle(
+            _return_x,
+            _return_y,
+            35, 475, 235, 520
+        ))
+        {
+            _hunt_return = true;
+        }
+    }
+
+    if (_hunt_return)
+    {
+        screen_manager.navigate_to(ScreenId.GAMEPLAY);
+
+        mouse_clear(mb_left);
+    }
+}
+
+
+// --------------------------------------------------
+// TITLE SCREEN INPUT
+// --------------------------------------------------
+
+if (screen_manager.can_receive_input(ScreenId.TITLE))
+{
+    // Get shared Start button geometry
+    var _start_button = get_title_start_button_bounds();
+
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Detect mouse click inside the Start button
+    var _start_clicked =
+        mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _start_button.x,
+            _start_button.y,
+            _start_button.x + _start_button.width,
+            _start_button.y + _start_button.height
+        );
+
+    // Support both mouse and keyboard navigation
+   
+	if (_start_clicked
+	|| keyboard_check_pressed(vk_enter))
+	{
+	    // Each new setup begins without a selected difficulty
+	    selected_campaign_difficulty = CampaignDifficulty.NONE;
+
+	    screen_manager.navigate_to(ScreenId.CAMPAIGN_SETUP);
+	}
+
+}
+
+// --------------------------------------------------
+// CAMPAIGN SETUP INPUT
+// --------------------------------------------------
+
+// Allow returning to the title screen without
+// starting or modifying a campaign.
+
+if (screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP))
+{
+    // Get shared Back button geometry
+    var _back_button = get_campaign_setup_back_button_bounds();
+
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Detect a mouse click inside the button
+    var _back_clicked =
+        mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _back_button.x,
+            _back_button.y,
+            _back_button.x + _back_button.width,
+            _back_button.y + _back_button.height
+        );
+
+    // Support mouse and keyboard navigation
+    if (_back_clicked
+    || keyboard_check_pressed(vk_escape))
+    {
+        screen_manager.navigate_to(ScreenId.TITLE);
+    }
+}
+
+// --------------------------------------------------
+// CAMPAIGN DIFFICULTY SELECTION
+// --------------------------------------------------
+
+
+if (_screen_at_step_start == ScreenId.CAMPAIGN_SETUP
+&& screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP)
+&& mouse_check_button_pressed(mb_left))
+
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Get the shared difficulty button layout
+    var _options = get_campaign_setup_difficulty_options();
+
+    // Check each difficulty button
+    for (var _i = 0; _i < array_length(_options); _i++)
+    {
+        var _option = _options[_i];
+
+        if (point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _option.x,
+            _option.y,
+            _option.x + _option.width,
+            _option.y + _option.height
+        ))
+        {
+            // Store the player's explicit selection
+            selected_campaign_difficulty = _option.difficulty;
+
+            // Only one difficulty can be selected
+            break;
+        }
+    }
+}
+
+// --------------------------------------------------
+// BEGIN CAMPAIGN INPUT
+// --------------------------------------------------
+
+// Only accept input if Campaign Setup was active
+// at the beginning of this Step Event.
+
+if (_screen_at_step_start == ScreenId.CAMPAIGN_SETUP
+&& screen_manager.can_receive_input(ScreenId.CAMPAIGN_SETUP))
+{
+    // A difficulty must be explicitly selected
+    if (selected_campaign_difficulty != CampaignDifficulty.NONE)
+    {
+        // Get shared Begin button geometry
+        var _begin_button = get_campaign_setup_begin_button_bounds();
+
+        // Get mouse position in GUI coordinates
+        var _mouse_x = device_mouse_x_to_gui(0);
+        var _mouse_y = device_mouse_y_to_gui(0);
+
+        // Detect click inside Begin Campaign button
+        if (mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _begin_button.x,
+            _begin_button.y,
+            _begin_button.x + _begin_button.width,
+            _begin_button.y + _begin_button.height
+        ))
+        {
+            // Initialize and enter gameplay
+            start_campaign();
+        }
+    }
+}
+
+
+// --------------------------------------------------
+// PAUSE MENU - ESCAPE KEY INPUT
+// --------------------------------------------------
+
+// Escape controls the pause menu only during gameplay.
+// Before gameplay, existing screen navigation handles Escape.
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& keyboard_check_pressed(vk_escape))
+{
+    var _top_overlay = screen_manager.get_top_overlay();
+
+   
+// Close the confirmation first, if one is open
+if (_top_overlay == OverlayId.CONFIRMATION)
+{
+    screen_manager.close_top_overlay();
+	
+	pause_confirmation_action = "";
+
+    show_debug_message("PAUSE MENU: Confirmation cancelled");
+}
+
+// Otherwise close the pause menu normally
+else if (_top_overlay == OverlayId.PAUSE_MENU)
+{
+    screen_manager.close_top_overlay();
+
+    show_debug_message("PAUSE MENU: Closed");
+}
+
+
+    // Escape opens the pause menu if no overlay is active
+    else if (_top_overlay == noone
+    && screen_manager.can_receive_input(ScreenId.GAMEPLAY))
+    {
+        screen_manager.open_overlay(OverlayId.PAUSE_MENU);
+
+        show_debug_message("PAUSE MENU: Opened");
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RESUME BUTTON INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Resume is the first menu button (index 0)
+    var _resume_button = get_pause_menu_button_bounds(0);
+
+    // Check whether Resume was clicked
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _resume_button.x,
+        _resume_button.y,
+        _resume_button.x + _resume_button.width,
+        _resume_button.y + _resume_button.height
+    ))
+    {
+        // Dismiss the pause overlay
+        screen_manager.close_top_overlay();
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RESTART CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Restart Campaign is menu index 3
+    var _restart_button = get_pause_menu_button_bounds(3);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _restart_button.x,
+        _restart_button.y,
+        _restart_button.x + _restart_button.width,
+        _restart_button.y + _restart_button.height
+    ))
+    {
+        
+	// Record the requested confirmation action
+	pause_confirmation_action = "restart";
+
+	// Open confirmation without changing campaign state
+	screen_manager.open_overlay(OverlayId.CONFIRMATION);
+
+	}
+}
+
+// --------------------------------------------------
+// PAUSE MENU - RETURN TO TITLE CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.PAUSE_MENU
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Return to Title is menu index 5
+    var _return_button = get_pause_menu_button_bounds(5);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _return_button.x,
+        _return_button.y,
+        _return_button.x + _return_button.width,
+        _return_button.y + _return_button.height
+    ))
+    {
+        // Record the requested action
+        pause_confirmation_action = "title";
+
+        // Open the existing confirmation overlay
+        screen_manager.open_overlay(OverlayId.CONFIRMATION);
+    }
+}
+
+// --------------------------------------------------
+// PAUSE MENU - QUIT TO DESKTOP CONFIRMATION INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.PAUSE_MENU
+&& screen_manager.get_top_overlay() == OverlayId.PAUSE_MENU
+&& mouse_check_button_pressed(mb_left))
+{
+    // Get mouse position in GUI coordinates
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Quit to Desktop is menu index 6
+    var _quit_button = get_pause_menu_button_bounds(6);
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _quit_button.x,
+        _quit_button.y,
+        _quit_button.x + _quit_button.width,
+        _quit_button.y + _quit_button.height
+    ))
+    {
+        // Record the requested confirmation action
+        pause_confirmation_action = "quit";
+
+        // Open confirmation without exiting the game
+        screen_manager.open_overlay(OverlayId.CONFIRMATION);
+    }
+}
+
+
+
+// --------------------------------------------------
+// PAUSE MENU - CONFIRMATION BUTTON INPUT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& _overlay_at_step_start == OverlayId.CONFIRMATION
+&& screen_manager.get_top_overlay() == OverlayId.CONFIRMATION
+&& mouse_check_button_pressed(mb_left))
+{
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    var _confirm_button =
+        get_pause_confirmation_button_bounds(0);
+
+    var _cancel_button =
+        get_pause_confirmation_button_bounds(1);
+
+
+    // --------------------------------------------------
+    // CONFIRM REQUESTED ACTION
+    // --------------------------------------------------
+
+    if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _confirm_button.x,
+        _confirm_button.y,
+        _confirm_button.x + _confirm_button.width,
+        _confirm_button.y + _confirm_button.height
+    ))
+    {
+        // Remember the action before clearing dialog state
+        var _action = pause_confirmation_action;
+
+        // Close confirmation and pause overlays
+        screen_manager.close_top_overlay();
+        screen_manager.close_top_overlay();
+
+        // Prevent click-through during navigation
+        mouse_clear(mb_left);
+
+        // Clear the pending action
+        pause_confirmation_action = "";
+
+
+        // ----------------------------------------------
+        // RESTART CAMPAIGN
+        // ----------------------------------------------
+
+        if (_action == "restart")
+        {
+            start_campaign();
+        }
+
+
+        // ----------------------------------------------
+        // RETURN TO TITLE
+        // ----------------------------------------------
+
+        else if (_action == "title")
+        {
+            // Remove gameplay choice buttons
+            clear_choice_buttons();
+
+            // Remove the reusable Continue button
+            if (instance_exists(continue_button_instance))
+            {
+                instance_destroy(continue_button_instance);
+            }
+
+            continue_button_instance = noone;
+
+            // Require a new difficulty selection
+            // when beginning another campaign
+            selected_campaign_difficulty =
+                CampaignDifficulty.NONE;
+
+            // Navigate to the title without starting
+            // or resetting a new campaign
+            screen_manager.navigate_to(ScreenId.TITLE);
+        }
+		
+			// ----------------------------------------------
+			// QUIT TO DESKTOP
+			// ----------------------------------------------
+
+			else if (_action == "quit")
+			{
+			    // Exit the application after confirmation
+			    game_end();
+			}
+
+    }
+
+
+    // --------------------------------------------------
+    // CANCEL REQUESTED ACTION
+    // --------------------------------------------------
+
+    else if (point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _cancel_button.x,
+        _cancel_button.y,
+        _cancel_button.x + _cancel_button.width,
+        _cancel_button.y + _cancel_button.height
+    ))
+    {
+        // Close only the confirmation dialog
+        screen_manager.close_top_overlay();
+
+        // Consume the click
+        mouse_clear(mb_left);
+
+        // Clear the pending action
+        pause_confirmation_action = "";
+    }
+}
+
+
+// Toggle Debug Panel with CTRL + D
+if (keyboard_check_pressed(ord("D"))
+&& keyboard_check(vk_control))
+{
+    debug_panel_open = !debug_panel_open;
+}
+
+// --------------------------------------------------
+// PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
+// --------------------------------------------------
+
+if (get_campaign_phase() == CampaignPhase.CHOOSING)
+
+{
+    var _choice_index = -1;
+
+    if (keyboard_check_pressed(ord("1")))
+        _choice_index = 0;
+    else if (keyboard_check_pressed(ord("2")))
+        _choice_index = 1;
+    else if (keyboard_check_pressed(ord("3")))
+        _choice_index = 2;
+
+ // --------------------------------------------------
+ // PROCESS PLAYER DECISIONS (MOUSE)
+ // --------------------------------------------------
+
+	// Get the event currently presented to the player
+	var _keyboard_event = get_current_campaign_event();
+
+	// Validate against the current event's choices
+	if (is_struct(_keyboard_event)
+	&& _choice_index >= 0
+	&& _choice_index < array_length(_keyboard_event.choices))
+	{
+	    apply_player_choice(_choice_index);
+	}
+
+
+
+}
+
+
+// --------------------------------------------------
+// PART 1B: SCROLL DECISION RESULTS
+// --------------------------------------------------
+
+
+/// --------------------------------------------------
+/// PART 1B: SCROLL DECISION RESULTS
+/// --------------------------------------------------
+
+if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.REVIEWING
+&& result_message != "")
+{
+    // Get shared results region
+    var _regions = get_ui_regions();
+    var _region = _regions.results;
+
+    // Calculate result text layout
+    var _layout = calculate_result_layout(
+        game_message,
+        result_message,
+        _region
+    );
+
+    // Get mouse coordinates in GUI space
+    var _mouse_x = device_mouse_x_to_gui(0);
+    var _mouse_y = device_mouse_y_to_gui(0);
+
+    // Check whether mouse is over the results
+    var _mouse_over_results = point_in_rectangle(
+        _mouse_x,
+        _mouse_y,
+        _region.x,
+        _layout.result_y,
+        _region.x + _region.width,
+        _region.y + _region.height
+    );
+
+    // --------------------------------------------------
+    // MOUSE WHEEL SCROLLING
+    // --------------------------------------------------
+
+    if (_mouse_over_results)
+    {
+        if (mouse_wheel_down())
+        {
+            result_scroll_offset += 24;
+        }
+        else if (mouse_wheel_up())
+        {
+            result_scroll_offset -= 24;
+        }
+    }
+
+    // --------------------------------------------------
+    // CALCULATE SHARED SCROLLBAR GEOMETRY
+    // --------------------------------------------------
+
+    var _scrollbar = calculate_result_scrollbar_layout(
+        _layout,
+        _regions.result_scrollbar,
+        result_scroll_offset
+    );
+
+    var _max_scroll = _scrollbar.max_scroll;
+
+    // --------------------------------------------------
+    // DRAG RESULT SCROLLBAR
+    // --------------------------------------------------
+
+    if (_scrollbar.visible)
+    {
+        // Retrieve shared scrollbar geometry
+        var _track = _scrollbar.track;
+        var _thumb = _scrollbar.thumb;
+        var _thumb_travel = _scrollbar.thumb_travel;
+
+        // Start dragging when clicking the thumb
+        if (mouse_check_button_pressed(mb_left)
+        && point_in_rectangle(
+            _mouse_x,
+            _mouse_y,
+            _thumb.x,
+            _thumb.y,
+            _thumb.x + _thumb.width,
+            _thumb.y + _thumb.height
+        ))
+        {
+            result_scroll_dragging = true;
+
+            // Record where the thumb was grabbed
+            result_scroll_grab_offset = _mouse_y - _thumb.y;
+        }
+
+        // Update scrollbar while dragging
+        if (result_scroll_dragging)
+        {
+            if (mouse_check_button(mb_left))
+            {
+                var _new_thumb_y = clamp(
+                    _mouse_y - result_scroll_grab_offset,
+                    _track.y,
+                    _track.y + _thumb_travel
+                );
+
+                if (_thumb_travel > 0)
+                {
+                    result_scroll_offset =
+                        ((_new_thumb_y - _track.y) / _thumb_travel)
+                        * _max_scroll;
+                }
+            }
+            else
+            {
+                // Stop dragging on mouse release
+                result_scroll_dragging = false;
+            }
+        }
+    }
+    else
+    {
+        // No scrollbar needed
+        result_scroll_dragging = false;
+    }
+
+    // --------------------------------------------------
+    // CLAMP SCROLL POSITION
+    // --------------------------------------------------
+
+    result_scroll_offset = clamp(
+        result_scroll_offset,
+        0,
+        _max_scroll
+    );
+}
+else
+{
+    // Cancel dragging when gameplay loses input
+    result_scroll_dragging = false;
+}
+
+
+
+// --------------------------------------------------
+// PART 2: ADVANCE TO THE NEXT EVENT
+// --------------------------------------------------
+
+// Route keyboard progression through the controller
+if (keyboard_check_pressed(vk_enter))
+{
+     request_continue();
+}
+
+
+
+if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.REVIEWING
+&& continue_requested)
+{
+ 
+	
+
+if (is_struct(active_encounter))
+{
+    // Record the resolved dynamic encounter once
+    if (record_completed_dynamic_encounter(id))
+    {
+        var _completed_event_id = active_encounter.id;
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completed event = "
+            + _completed_event_id
+        );
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completed count = "
+            + string(campaign_events_completed)
+        );
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Routing completed = "
+            + string(
+                campaign_stage_events_completed[
+                    EventStage.ROUTING
+                ]
+            )
+        );
+
+        // Clear the completed encounter before
+        // attempting to select another one.
+        active_encounter = undefined;
+		
+
+        // --------------------------------------------------
+        // AUTOMATIC ENGINEERING STAGE PROGRESSION
+        // --------------------------------------------------
+
+        // A stage advances only after its scheduled target
+        // has been completed. Consequences do not count.
+        var _dynamic_finalized = false;
+
+        if (is_dynamic_stage_complete(id))
+        {
+            var _completed_stage = current_event_stage;
+
+            if (_completed_stage < EventStage.RELEASE)
+            {
+                // Enforce stage targets and required reviews.
+                if (advance_dynamic_campaign_stage(id))
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Advanced from "
+                        + string(_completed_stage)
+                        + " to "
+                        + string(current_event_stage)
+                    );
+                }
+                else
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Advancement blocked"
+                    );
+                }
+            }
+            else
+            {
+                // Release is the last engineering stage.
+                if (is_dynamic_campaign_release_ready(id))
+                {
+                    _dynamic_finalized = finalize_dynamic_campaign(
+                        id,
+                        get_overdue_workdays()
+                    );
+
+                    if (_dynamic_finalized)
+                    {
+                        show_debug_message(
+                            "DYNAMIC STAGE: Final release evaluated"
+                        );
+                    }
+                    else
+                    {
+                        show_debug_message(
+                            "DYNAMIC STAGE: Finalization rejected"
+                        );
+                    }
+                }
+                else
+                {
+                    show_debug_message(
+                        "DYNAMIC STAGE: Final release blocked"
+                    );
+                }
+            }
+        }
+
+       
+if (!_dynamic_finalized)
+{
+    if (begin_scheduled_campaign_encounter(id))
+    {
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Next event = "
+            + active_encounter.id
+        );
+
+        // Prepare the new encounter for player input.
+        event_resolved = false;
+        game_message = "";
+        result_message = "";
+
+        reset_result_scroll_state();
+        refresh_choice_buttons();
+    }
+    else
+    {
+        // No eligible encounter exists in this stage.
+        //
+        // This is an incomplete development build,
+        // NOT a project failure or design release.
+        //
+        // Never return to the old prototype events.
+
+        event_active = false;
+        event_resolved = false;
+
+        game_message = "EVENT POOL EXHAUSTED";
+
+        result_message =
+            "This development build has no further "
+            + "eligible encounters for the current "
+            + "engineering stage."
+            + "\n\n"
+            + "Your completed decisions were recorded. "
+            + "No final design release was evaluated."
+            + "\n\n"
+            + "Use the Pause menu to restart the campaign "
+            + "or return to the title screen.";
+
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Content exhausted in stage "
+            + string(current_event_stage)
+        );
+    }
+}
+
+
+        // On finalization, leave event_active false so the
+        // existing FINISHED-phase UI and cleanup will run.
+
+    }
+    else
+    {
+        // Preserve the encounter if recording fails
+        game_message =
+            "DYNAMIC PREVIEW: Completion not recorded.";
+
+        show_debug_message(
+            "DYNAMIC PREVIEW: Completion recording failed"
+        );
+    }
+}
+
+}
+// Reset the Continue request after checking progression
+continue_requested = false;
+
+// --------------------------------------------------
+// PART 3: CLEAN UP BUTTONS WHEN GAMEPLAY ENDS
+// --------------------------------------------------
+
+
+if (get_campaign_phase() == CampaignPhase.FINISHED
+&& array_length(choice_button_instances) > 0)
+{
+    clear_choice_buttons();
+}
+
+
+
+// Remove the Continue button when gameplay ends
+
+if (get_campaign_phase() == CampaignPhase.FINISHED
+&& instance_exists(continue_button_instance))
+{
+    instance_destroy(continue_button_instance);
+}
+
+
+
+/* 
+ // --------------------------------------------------
+ // TEMPORARY TEST: PROJECT CALENDAR INSPECTOR
+ // --------------------------------------------------
+
+ if (keyboard_check_pressed(ord("T")))
+ {
+     show_message(
+         "Current date: "
+         + format_project_date(project_current_date)
+         + "\nProject deadline: "
+         + format_project_date(project_deadline_date)
+         + "\nWorkdays until deadline: "
+         + string(get_workdays_until_deadline())
+         + "\nLegacy days remaining: "
+         + string(days_remaining)
+         + "\nEngineering hours elapsed: "
+         + string(project_work_hours_elapsed)
+         + "\nHours accumulated today: "
+         + string(project_work_hours_today)
+         + "\nAdditional schedule delays: "
+         + string(project_schedule_delay_days)		 
+		 + "\nOverdue workdays: "
+		 + string(get_overdue_workdays())
+
+     );
+ }
+
+*/
