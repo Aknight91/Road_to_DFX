@@ -471,52 +471,6 @@ if (keyboard_check_pressed(ord("D"))
 }
 
 // --------------------------------------------------
-// TEMPORARY DYNAMIC ENCOUNTER PREVIEW - F8
-// --------------------------------------------------
-
-// Development-only test for the new event system.
-// Normal campaigns continue using the four-event
-// prototype unless F8 is pressed.
-//
-// This shortcut will be removed after integration.
-
-if (screen_manager.can_receive_input(ScreenId.GAMEPLAY)
-&& get_campaign_phase() == CampaignPhase.CHOOSING
-&& keyboard_check_pressed(vk_f8)
-&& !is_struct(active_encounter))
-{
-    // Save the current stage in case selection fails.
-    var _previous_stage = current_event_stage;
-
-    // Preview the first Design Setup event.
-	current_event_stage = EventStage.DESIGN_SETUP;
-
-    if (begin_scheduled_campaign_encounter(id))
-    {
-        // Rebuild the buttons using the selected event.
-        refresh_choice_buttons();
-
-        // Clear messages from the prototype event.
-        game_message = "";
-        result_message = "";
-
-        show_debug_message(
-            "DYNAMIC PREVIEW: Active event = "
-            + active_encounter.id
-        );
-    }
-    else
-    {
-        // Do not change the stage if selection fails.
-        current_event_stage = _previous_stage;
-
-        show_debug_message(
-            "DYNAMIC PREVIEW: Event selection failed"
-        );
-    }
-}
-
-// --------------------------------------------------
 // PART 1: PROCESS PLAYER DECISIONS (KEYBOARD)
 // --------------------------------------------------
 
@@ -808,40 +762,56 @@ if (is_struct(active_encounter))
             }
         }
 
-        // --------------------------------------------------
-        // SELECT NEXT EVENT ONLY IF CAMPAIGN IS NOT FINISHED
-        // --------------------------------------------------
+       
+if (!_dynamic_finalized)
+{
+    if (begin_scheduled_campaign_encounter(id))
+    {
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Next event = "
+            + active_encounter.id
+        );
 
-        if (!_dynamic_finalized)
-        {
-            if (begin_scheduled_campaign_encounter(id))
-            {
-                show_debug_message(
-                    "DYNAMIC PREVIEW: Next event = "
-                    + active_encounter.id
-                );
-            }
-            else
-            {
-                // Retain the existing prototype fallback
-                // until the dynamic event pools are complete.
-                current_event_stage = EventStage.DESIGN_SETUP;
+        // Prepare the new encounter for player input.
+        event_resolved = false;
+        game_message = "";
+        result_message = "";
 
-                show_debug_message(
-                    "DYNAMIC PREVIEW: No further events available"
-                );
+        reset_result_scroll_state();
+        refresh_choice_buttons();
+    }
+    else
+    {
+        // No eligible encounter exists in this stage.
+        //
+        // This is an incomplete development build,
+        // NOT a project failure or design release.
+        //
+        // Never return to the old prototype events.
 
-                show_debug_message(
-                    "DYNAMIC PREVIEW: Returning to prototype"
-                );
-            }
+        event_active = false;
+        event_resolved = false;
 
-            event_resolved = false;
-            game_message = "";
-            result_message = "";
-            reset_result_scroll_state();
-            refresh_choice_buttons();
-        }
+        game_message = "EVENT POOL EXHAUSTED";
+
+        result_message =
+            "This development build has no further "
+            + "eligible encounters for the current "
+            + "engineering stage."
+            + "\n\n"
+            + "Your completed decisions were recorded. "
+            + "No final design release was evaluated."
+            + "\n\n"
+            + "Use the Pause menu to restart the campaign "
+            + "or return to the title screen.";
+
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Content exhausted in stage "
+            + string(current_event_stage)
+        );
+    }
+}
+
 
         // On finalization, leave event_active false so the
         // existing FINISHED-phase UI and cleanup will run.
@@ -859,89 +829,7 @@ if (is_struct(active_encounter))
     }
 }
 
-
-else if (current_event_index < array_length(design_events) - 1)
-
-	{
-	    current_event_index += 1;
-
-	    event_resolved = false;
-
-	    // Rebuild buttons using the new event's choices
-	    refresh_choice_buttons();
-
-	    game_message = "";
-	    result_message = "";
-	}
-
-    else
-    {
-        // --------------------------------------------------
-        // FINAL ROADMAP EVALUATION
-        // --------------------------------------------------
-
-        event_active = false;
-
-        failure_reason = "";
-
-        if (dfa < required_dfa)
-        {
-            failure_reason +=
-                "ASSEMBLY FAILURE: DFA below release requirement.\n";
-        }
-
-        if (dfm < required_dfm)
-        {
-            failure_reason +=
-                "MANUFACTURING FAILURE: DFM below release requirement.\n";
-        }
-
-        if (dft < required_dft)
-        {
-            failure_reason +=
-                "TEST FAILURE: DFT below release requirement.\n";
-        }
-
-        
-       
-		
-        if (failure_reason == "")
-        {
-            campaign_complete = true;
-
-            // Check for the special half-victory condition
-            if (get_overdue_workdays() > 0 && sanity <= 0)
-            {
-                campaign_half_victory = true;
-
-                game_message = "DESIGN RELEASED - HALF VICTORY!";
-
-                result_message =
-                    "The design met all DFX release requirements. "
-                    + "However, the project was delivered late "
-                    + "and the engineer was terminated.";
-            }
-            else
-            {
-                game_message = "DESIGN RELEASE APPROVED!";
-
-                result_message =
-                    "Congratulations! All DFX release requirements were met.";
-            }
-        }
-        else
-        {
-            campaign_failed = true;
-
-            game_message = "PROJECT FAILURE!";
-
-            result_message = failure_reason;
-        }
-
-
-	}
 }
-
 // Reset the Continue request after checking progression
 continue_requested = false;
 

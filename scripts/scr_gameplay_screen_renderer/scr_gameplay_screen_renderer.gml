@@ -101,6 +101,37 @@ function draw_gameplay_screen(_game)
         }
 
 
+// --------------------------------------------------
+// DEVELOPMENT BUILD: INCOMPLETE EVENT LIBRARY
+// --------------------------------------------------
+
+// Gameplay stopped without a release outcome.
+// Display a neutral stopping point, not a victory
+// or failure screen.
+
+else
+{
+    draw_set_color(c_black);
+
+    draw_text(370, 160, "ROAD TO DFX");
+
+    draw_text(370, 210, game_message);
+
+    draw_text_ext(
+        370,
+        260,
+        result_message,
+        -1,
+        520
+    );
+
+    draw_text(
+        370,
+        455,
+        "Press ESC for the Pause menu."
+    );
+}
+
         // --------------------------------------------------
         // PROTOTYPE LABEL
         // --------------------------------------------------

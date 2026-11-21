@@ -1393,237 +1393,13 @@ if (is_struct(_profile))
 debug_panel_open = false;
 
 
-
-// Store reusable design events.
-design_events = [
-
-    {
-        title: "INCOMING DESIGN CHANGE!",
-
-        description:
-            "Engineering has received a late pin assignment change. "
-            + "How will you respond?",
-
-        choices: [
-            {
-                text: "Rework placement and routing",
-                hours_cost: 12,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 0,
-                dfa_change: 10,
-                dfm_change: 10,
-                dft_change: 0,
-                sanity_change: -8,
-               
-				// Permanent long-result regression case for UI testing
-				result:
-				    "The engineering team has completed the placement and "
-				    + "routing rework required by the revised pin assignments."
-				    + "\n\n"
-				    + "Several critical connections required additional routing "
-				    + "attention. The team reviewed trace clearances, routing "
-				    + "constraints, and the manufacturing implications of the "
-				    + "revised layout. Additional engineering hours were spent "
-				    + "correcting the affected areas rather than accepting "
-				    + "potential downstream fabrication problems."
-				    + "\n\n"
-				    + "The updated routing has been incorporated into the "
-				    + "design. Manufacturing risk has been reviewed, and the "
-				    + "project can proceed to its next engineering checkpoint. "
-				    + "While the rework consumed valuable schedule resources, "
-				    + "the team avoided releasing the original routing concerns "
-				    + "into the next stage of development."
-
-
-				  
-			},
-            {
-                text: "Apply a quick patch",
-                hours_cost: 4,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 10,
-                dfa_change: 0,
-                dfm_change: -10,
-                dft_change: 0,
-                sanity_change: -6,
-                result: "Quick patch applied. Manufacturing risk increased."
-            },
-            {
-                text: "Request a design review",
-                hours_cost: 2,
-                days_cost: 1,
-                drc_change: 0,
-                risk_change: -5,
-                dfa_change: 0,
-                dfm_change: 5,
-                dft_change: 0,
-                sanity_change: -4,
-                result: "Design review completed. Routing concerns reduced."
-            }
-        ]
-    },
-
-    {
-        // VIA SPACING EVENT
-        title: "VIA SPACING VIOLATION!",
-
-        description:
-            "Fabrication review has identified two vias "
-            + "that are too close together. The manufacturer "
-            + "has flagged the design. How will you respond?",
-
-        choices: [
-            {
-                text: "Rework routing to increase via spacing",
-                hours_cost: 10,
-                days_cost: 2,
-                drc_change: -1,
-                risk_change: -5,
-                dfa_change: 0,
-                dfm_change: 10,
-                dft_change: 0,
-                sanity_change: -8,
-                result: "Via spacing corrected. DFM improved."
-            },
-            {
-                text: "Request fabrication engineering review",
-                hours_cost: 4,
-                days_cost: 1,
-                drc_change: 0,
-                risk_change: -5,
-                dfa_change: 0,
-                dfm_change: 5,
-                dft_change: 0,
-                sanity_change: -4,
-                result: "Fabrication review completed. DFM improved."
-            },
-            {
-                text: "Accept risk and release artwork",
-                hours_cost: 0,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 20,
-                dfa_change: 0,
-                dfm_change: -15,
-                dft_change: 0,
-                sanity_change: -12,
-                result: "Artwork released with unresolved via spacing risk."
-            }
-        ]
-    },
-
-    {
-        // TEST COVERAGE EVENT
-        title: "TEST COVERAGE GAP!",
-
-        description:
-            "Engineering has discovered that several critical "
-            + "signals are missing test coverage. How will you respond?",
-
-        choices: [
-            {
-                text: "Add test points and update coverage",
-                hours_cost: 8,
-                days_cost: 1,
-                drc_change: 0,
-                risk_change: -5,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: 15,
-                sanity_change: -6,
-                result: "Test coverage improved. DFT increased."
-            },
-            {
-                text: "Perform a limited test review",
-                hours_cost: 4,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 0,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: 5,
-                sanity_change: -3,
-                result: "Limited test coverage improvements completed."
-            },
-            {
-                text: "Accept the existing test coverage",
-                hours_cost: 0,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 10,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: -10,
-                sanity_change: -8,
-                result: "Test coverage accepted with unresolved risk."
-            }
-                ]
-    },
-
-    {
-        // FINAL TEST SIGNOFF EVENT
-        title: "FINAL TEST SIGNOFF!",
-
-        description:
-            "The design is approaching release, but final "
-            + "test engineering signoff is still outstanding. "
-            + "How will you respond?",
-
-        choices: [
-            {
-                text: "Complete full test verification",
-                hours_cost: 10,
-                days_cost: 2,
-                drc_change: 0,
-                risk_change: -10,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: 15,
-                sanity_change: -5,
-                result: "Full test verification completed. DFT improved."
-            },
-            {
-                text: "Perform a limited verification",
-                hours_cost: 4,
-                days_cost: 1,
-                drc_change: 0,
-                risk_change: -5,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: 5,
-                sanity_change: -3,
-                result: "Limited test verification completed."
-            },
-            {
-                text: "Release without final verification",
-                hours_cost: 0,
-                days_cost: 0,
-                drc_change: 0,
-                risk_change: 20,
-                dfa_change: 0,
-                dfm_change: 0,
-                dft_change: -15,
-                sanity_change: -10,
-                result: "Design released without complete test verification."
-            }
-        ]
-    }
-	
-];
-
-
-
  // --------------------------------------------------
  // CAMPAIGN PROGRESSION INITIALIZATION
  // --------------------------------------------------
 
  initialize_campaign_progress = function()
  {
-     // Begin with the first engineering event
-     current_event_index = 0;
-	 
+     
 	// --------------------------------------------------
 	// CAMPAIGN EVENT HISTORY AND PROJECT CONDITIONS
 	// --------------------------------------------------
@@ -1817,50 +1593,51 @@ request_continue = function()
  };
 
 
- // --------------------------------------------------
- // CURRENT CAMPAIGN EVENT ACCESS
- // --------------------------------------------------
+// --------------------------------------------------
+// CURRENT CAMPAIGN EVENT ACCESS
+// --------------------------------------------------
 
- // Prefer an active dynamic encounter when available.
- // Otherwise, preserve the existing four-event prototype.
- // Returns undefined if neither source has a valid event.
- get_current_campaign_event = function()
- {
-     if (is_struct(active_encounter))
-     {
-         return active_encounter;
-     }
+// The dynamic encounter system is the only
+// source of gameplay events.
 
-     if (current_event_index >= 0
-     && current_event_index < array_length(design_events))
-     {
-         return design_events[current_event_index];
-     }
+get_current_campaign_event = function()
+{
+    if (is_struct(active_encounter))
+    {
+        return active_encounter;
+    }
 
-     return undefined;
- };
+    return undefined;
+};
 
+// --------------------------------------------------
+// GET CAMPAIGN OUTCOME
+// --------------------------------------------------
 
- // Return the campaign outcome
- get_campaign_outcome = function()
- {
-     if (campaign_failed)
-     {
-         return CampaignOutcome.FAILURE;
-     }
+// Shared campaign outcome interface.
+// Used by the gameplay renderer and final results UI.
 
-     if (campaign_complete)
-     {
-         if (campaign_half_victory)
-         {
-             return CampaignOutcome.HALF_VICTORY;
-         }
+get_campaign_outcome = function()
+{
+    if (campaign_failed)
+    {
+        return CampaignOutcome.FAILURE;
+    }
 
-         return CampaignOutcome.VICTORY;
-     }
+    if (campaign_complete)
+    {
+        if (campaign_half_victory)
+        {
+            return CampaignOutcome.HALF_VICTORY;
+        }
 
-     return CampaignOutcome.NONE;
- };
+        return CampaignOutcome.VICTORY;
+    }
+
+    // Includes unfinished campaigns and development
+    // builds that have exhausted their event pools.
+    return CampaignOutcome.NONE;
+};
 
 
 required_dfa = 50;
@@ -2526,14 +2303,26 @@ apply_player_choice = function(_choice_index)
                  sanity_zero_turns_remaining = 0;
                  sanity_zero_failure_pending = true;
 
-                 if (current_event_index < array_length(design_events) - 1)
-                 {
-                     campaign_failed = true;
-                     event_active = false;
+                // The final Release checkpoint is the last
+				// scheduled decision in a dynamic campaign.
+				//
+				// Allow final release evaluation to determine
+				// the outcome if the crisis expires here.
 
-                     failure_reason =
-                         "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
-                 }
+				var _is_final_release_decision =
+				    is_struct(active_encounter)
+				    && current_event_stage == EventStage.RELEASE
+				    && active_encounter.id == "REL-SIGNOFF-001"
+				    && get_due_stage_checkpoint_id(id) == "REL-SIGNOFF-001";
+
+				if (!_is_final_release_decision)
+				{
+				    campaign_failed = true;
+				    event_active = false;
+
+				    failure_reason =
+				        "SPECIAL FAILURE: Sanity crisis deadline exceeded.";
+				}
              }
          }
 
@@ -2781,6 +2570,7 @@ refresh_choice_buttons = function()
 		    reset_result_scroll_state();
 		};		
 
+
 /// @description Start or restart a campaign
 
 // --------------------------------------------------
@@ -2789,19 +2579,49 @@ refresh_choice_buttons = function()
 
 start_campaign = function()
 {
-    // Reset all campaign-specific data
+    // Reset campaign resources, calendar, progress,
+    // encounter history, flags, and outcome state.
     initialize_campaign_state();
-	
 
+    // --------------------------------------------------
+    // BEGIN DYNAMIC CAMPAIGN AUTOMATICALLY
+    // --------------------------------------------------
 
+    // The campaign starts at DESIGN_SETUP, as set
+    // by initialize_campaign_progress().
+    //
+    // This replaces the need to press F8.
 
+    if (begin_scheduled_campaign_encounter(id))
+    {
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Started with "
+            + active_encounter.id
+        );
+    }
+    else
+    {
+        // Temporary safety fallback while the
+        // remaining stage libraries are developed.
+        //
+        // Do not remove the original four events yet.
 
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Initial selection failed"
+        );
 
-    // Rebuild choice buttons for the first event
-    // This also removes the previous choice buttons
+        show_debug_message(
+            "DYNAMIC CAMPAIGN: Using legacy prototype"
+        );
+    }
+
+    // --------------------------------------------------
+    // REBUILD GAMEPLAY BUTTONS
+    // --------------------------------------------------
+
     refresh_choice_buttons();
 
-    // Create a Continue button only if one does not exist
+    // Create the Continue button if necessary.
     if (!instance_exists(continue_button_instance))
     {
         continue_button_instance = instance_create_depth(
@@ -2812,12 +2632,12 @@ start_campaign = function()
         );
     }
 
-    // Ensure the Continue button belongs to this controller
     continue_button_instance.controller = id;
 
-    // Display gameplay after initialization
+    // Enter the gameplay screen.
     screen_manager.navigate_to(ScreenId.GAMEPLAY);
 };
+
 
 
 // --------------------------------------------------
@@ -3106,40 +2926,3 @@ show_debug_message(
     "SESSION TEST: Real campaign played count = "
     + string(array_length(played_event_ids))
 );
-
-// --------------------------------------------------
-// TEMPORARY EVENT BRIDGE DIAGNOSTICS
-// STEP 58, PART 2J
-// --------------------------------------------------
-
-// Confirm that normal gameplay still uses the legacy event.
-var _bridge_legacy_event = get_current_campaign_event();
-
-if (is_struct(_bridge_legacy_event))
-{
-    show_debug_message(
-        "EVENT BRIDGE: Legacy = " + _bridge_legacy_event.title
-    );
-}
-
-// Temporarily supply a prepared encounter for this test.
-var _bridge_original_encounter = active_encounter;
-active_encounter = prepare_event_encounter(event_library.routing[0]);
-
-var _bridge_dynamic_event = get_current_campaign_event();
-
-if (is_struct(_bridge_dynamic_event))
-{
-    show_debug_message(
-        "EVENT BRIDGE: Dynamic = " + _bridge_dynamic_event.id
-    );
-}
-
-// Restore the original state before the first Step Event.
-active_encounter = _bridge_original_encounter;
-
-if (!is_struct(active_encounter)
-&& is_struct(get_current_campaign_event()))
-{
-    show_debug_message("EVENT BRIDGE: Legacy restored");
-}
