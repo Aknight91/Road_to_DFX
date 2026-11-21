@@ -60,6 +60,7 @@
     {"id":{"name":"scr_choice_layout_flex","path":"scripts/scr_choice_layout_flex/scr_choice_layout_flex.yy",},},
     {"id":{"name":"scr_choice_layout","path":"scripts/scr_choice_layout/scr_choice_layout.yy",},},
     {"id":{"name":"scr_drc_hunt_renderer","path":"scripts/scr_drc_hunt_renderer/scr_drc_hunt_renderer.yy",},},
+    {"id":{"name":"scr_drc_hunt_scene","path":"scripts/scr_drc_hunt_scene/scr_drc_hunt_scene.yy",},},
     {"id":{"name":"scr_drc_hunt_session","path":"scripts/scr_drc_hunt_session/scr_drc_hunt_session.yy",},},
     {"id":{"name":"scr_drc_hunt_shooting","path":"scripts/scr_drc_hunt_shooting/scr_drc_hunt_shooting.yy",},},
     {"id":{"name":"scr_drc_hunt_update","path":"scripts/scr_drc_hunt_update/scr_drc_hunt_update.yy",},},

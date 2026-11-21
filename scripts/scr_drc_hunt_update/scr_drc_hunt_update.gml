@@ -1,11 +1,13 @@
+/// @description DRC Hunting - update bowtie movement and behavior states
 
-/// @description DRC Hunting - Bowtie movement and behavior states
-
-// Update all bowties and return their updated array.
-// This function does not modify campaign resources.
-
-function drc_hunt_update_targets(_targets)
+// Updates existing bowtie data without accessing campaign state.
+// The caller stores the returned target array.
+function drc_hunt_update_targets(_targets, _scene)
 {
+    // Use the shared PCB scene for movement and reappearance.
+    var _movement = _scene.movement_bounds;
+    var _reappear = _scene.reappear_bounds;
+
     for (var _i = 0; _i < array_length(_targets); _i++)
     {
         var _target = _targets[_i];
@@ -38,8 +40,8 @@ function drc_hunt_update_targets(_targets)
                 if (_target.behavior_frames_remaining <= 0)
                 {
                     // Reappear somewhere else on the PCB.
-                    _target.x = irandom_range(110, 850);
-                    _target.y = irandom_range(185, 340);
+                    _target.x = irandom_range(_reappear.x1, _reappear.x2);
+                    _target.y = irandom_range(_reappear.y1, _reappear.y2);
 
                     _target.behavior = "scurry";
                     _target.behavior_frames_remaining = 0;
@@ -82,17 +84,17 @@ function drc_hunt_update_targets(_targets)
                     _target.y += _target.dy;
 
                     // Horizontal boundaries.
-                    if (_target.x <= 90 || _target.x >= 870)
+                    if (_target.x <= _movement.x1 || _target.x >= _movement.x2)
                     {
                         _target.dx = -_target.dx;
-                        _target.x = clamp(_target.x, 90, 870);
+                        _target.x = clamp(_target.x, _movement.x1, _movement.x2);
                     }
 
                     // Vertical boundaries.
-                    if (_target.y <= 170 || _target.y >= 355)
+                    if (_target.y <= _movement.y1 || _target.y >= _movement.y2)
                     {
                         _target.dy = -_target.dy;
-                        _target.y = clamp(_target.y, 170, 355);
+                        _target.y = clamp(_target.y, _movement.y1, _movement.y2);
                     }
                 }
             }

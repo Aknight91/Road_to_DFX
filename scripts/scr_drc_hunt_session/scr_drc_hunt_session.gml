@@ -46,7 +46,8 @@ function drc_hunt_begin_session(_game)
     // Build a fresh set of bowties for this hunt.
     _game.drc_hunt_targets = drc_hunt_create_targets(
         _game.drc_hunt_max_hits,
-        _game.drc_violations
+        _game.drc_violations,
+        _game.drc_hunt_scene
     );
 
     return true;

@@ -1315,11 +1315,8 @@ drc_hunt_targets = [];
 // Target initialization is handled by scr_drc_hunt_targets.
 
 
-
-
-
-
-
+// Shared PCB scene definition.
+drc_hunt_scene = drc_hunt_create_scene();
 
 
 /// @description Initialize campaign starting statistics

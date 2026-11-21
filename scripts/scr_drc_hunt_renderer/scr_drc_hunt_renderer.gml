@@ -17,20 +17,28 @@ function draw_drc_hunt_screen(_game)
     draw_set_color(c_white);
     draw_text(35, 35, "ROAD TO DFX - DRC HUNT");
 
-    // Temporary PCB playfield
-    draw_set_color(make_color_rgb(20, 75, 45));
-    draw_rectangle(60, 115, 900, 425, false);
+    // PCB geometry comes from scr_drc_hunt_scene.
+    var _scene = _game.drc_hunt_scene;
+    var _board = _scene.board;
 
-    // Copper traces
+    // Temporary PCB playfield - same color and coordinates.
+    draw_set_color(make_color_rgb(20, 75, 45));
+    draw_rectangle(
+        _board.x1, _board.y1,
+        _board.x2, _board.y2,
+        false
+    );
+
+    // Copper traces - same six line segments, in the same order.
     draw_set_color(make_color_rgb(190, 155, 75));
 
-    draw_line(100, 180, 350, 180);
-    draw_line(350, 180, 350, 300);
-    draw_line(350, 300, 700, 300);
-
-    draw_line(150, 365, 500, 365);
-    draw_line(500, 365, 500, 220);
-    draw_line(500, 220, 820, 220);
+    for (var _trace_index = 0;
+         _trace_index < array_length(_scene.traces);
+         _trace_index++)
+    {
+        var _trace = _scene.traces[_trace_index];
+        draw_line(_trace.x1, _trace.y1, _trace.x2, _trace.y2);
+    }
 	
 
 // --------------------------------------------------
@@ -106,7 +114,8 @@ var _my = device_mouse_y_to_gui(0);
 // Only show the crosshair inside the PCB
 if (point_in_rectangle(
     _mx, _my,
-    60, 115, 900, 425
+    _board.x1, _board.y1,
+    _board.x2, _board.y2
 ))
 {
     draw_set_color(c_yellow);

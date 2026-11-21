@@ -99,7 +99,10 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
     // ----------------------------------------------
 
     // Movement and behavior logic lives in scr_drc_hunt_update.
-    drc_hunt_targets = drc_hunt_update_targets(drc_hunt_targets);
+    drc_hunt_targets = drc_hunt_update_targets(
+        drc_hunt_targets,
+        drc_hunt_scene
+    );
 
     // ----------------------------------------------
     // SHOOTING INPUT
@@ -111,7 +114,8 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
         var _shot_result = drc_hunt_process_shot(
             drc_hunt_targets,
             device_mouse_x_to_gui(0),
-            device_mouse_y_to_gui(0)
+            device_mouse_y_to_gui(0),
+            drc_hunt_scene
         );
 
         drc_hunt_targets = _shot_result.targets;

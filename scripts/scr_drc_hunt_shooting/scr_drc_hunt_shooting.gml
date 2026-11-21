@@ -1,10 +1,9 @@
-
 /// @description DRC Hunting - shot validation and target hit detection
 
 // Calculates the result of a click without changing campaign resources.
 // The caller applies shot/hit counters and manufacturing consequences.
 // A returned hit_index of -1 means no target was hit.
-function drc_hunt_process_shot(_targets, _shot_x, _shot_y)
+function drc_hunt_process_shot(_targets, _shot_x, _shot_y, _scene)
 {
     var _result = {
         targets: _targets,
@@ -12,8 +11,15 @@ function drc_hunt_process_shot(_targets, _shot_x, _shot_y)
         hit_index: -1
     };
 
+    // Use the shared scene's PCB bounds for valid shots.
+    var _board = _scene.board;
+
     // Only clicks inside the PCB count as shots.
-    if (!point_in_rectangle(_shot_x, _shot_y, 60, 115, 900, 425))
+    if (!point_in_rectangle(
+        _shot_x, _shot_y,
+        _board.x1, _board.y1,
+        _board.x2, _board.y2
+    ))
     {
         return _result;
     }
