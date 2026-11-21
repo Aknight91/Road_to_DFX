@@ -1,4 +1,15 @@
-/// @description Render modal overlays above gameplay UI
+
+/// @description Render debug panel and modal overlays
+
+// --------------------------------------------------
+// DEBUG PANEL
+// --------------------------------------------------
+
+// Draw above gameplay controls.
+if (screen_manager.get_current_screen() == ScreenId.GAMEPLAY)
+{
+    draw_gameplay_debug_panel(id);
+}
 
 // --------------------------------------------------
 // DRAW ACTIVE OVERLAYS
@@ -17,5 +28,4 @@ if (_top_overlay == OverlayId.PAUSE_MENU
 if (_top_overlay == OverlayId.CONFIRMATION)
 {
     draw_pause_confirmation_overlay(pause_confirmation_action);
-
 }

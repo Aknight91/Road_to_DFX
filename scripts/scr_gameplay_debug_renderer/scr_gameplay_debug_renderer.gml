@@ -105,10 +105,13 @@ function draw_gameplay_debug_panel(_game)
 
     draw_set_color(c_white);
 
+    
     draw_text(
         610, 429,
-        "Current event: " + string(_game.current_event_index + 1)
+        "Completed events: "
+        + string(array_length(_game.played_event_ids))
     );
+
 
     draw_text(
         610, 447,

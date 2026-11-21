@@ -2197,6 +2197,47 @@ reset_result_scroll_state = function()
  };
 
 
+// --------------------------------------------------
+// APPLY MANUFACTURING CHANGES
+// --------------------------------------------------
+
+// Shared by engineering decisions and future DRC Hunting.
+// Updates DRC violations, manufacturing risk, and DFM.
+
+apply_manufacturing_changes = function(
+    _drc_change,
+    _risk_change,
+    _dfm_change
+)
+{
+    // Calculate the manufacturing penalty before changes.
+    var _old_penalty =
+        (drc_violations * 2) + manufacturing_risk;
+
+    // Apply the requested changes.
+    drc_violations = max(
+        0,
+        drc_violations + _drc_change
+    );
+
+    manufacturing_risk = max(
+        0,
+        manufacturing_risk + _risk_change
+    );
+
+    // Calculate the penalty after changes.
+    var _new_penalty =
+        (drc_violations * 2) + manufacturing_risk;
+
+    // Update DFM without double-counting the changes.
+    dfm = clamp(
+        dfm + _dfm_change
+        + (_old_penalty - _new_penalty),
+        0,
+        100
+    );
+};
+
 
  // --------------------------------------------------
  // APPLY PLAYER CHOICE
@@ -2206,6 +2247,12 @@ reset_result_scroll_state = function()
 apply_player_choice = function(_choice_index)
 {
 	
+    // Prevent decisions while the debug panel is open.
+    if (debug_panel_open)
+    {
+        exit;
+    }
+
 	// Reject player decisions when gameplay does not own input
 	if (!screen_manager.can_receive_input(ScreenId.GAMEPLAY))
 	{
@@ -2255,27 +2302,27 @@ apply_player_choice = function(_choice_index)
          // Update remaining workdays
          days_remaining = get_workdays_until_deadline();
 
-         // Record manufacturing penalty before changes
-         var _old_manufacturing_penalty =
-             (drc_violations * 2) + manufacturing_risk;
+        
+        // --------------------------------------------------
+        // APPLY MANUFACTURING CHANGES
+        // --------------------------------------------------
 
-         // Apply DRC and manufacturing risk changes
-         drc_violations = max(0, drc_violations + _choice.drc_change);
-         manufacturing_risk = max(0, manufacturing_risk + _choice.risk_change);
+        // Update DRC violations, manufacturing risk,
+        // and DFM using the shared calculation.
 
-         // Calculate manufacturing penalty after changes
-         var _new_manufacturing_penalty =
-             (drc_violations * 2) + manufacturing_risk;
+        apply_manufacturing_changes(
+            _choice.drc_change,
+            _choice.risk_change,
+            _choice.dfm_change
+        );
 
-         // Apply DFX changes
-         dfa = clamp(dfa + _choice.dfa_change, 0, 100);
+        // Apply DFA change
+        dfa = clamp(
+            dfa + _choice.dfa_change,
+            0,
+            100
+        );
 
-         dfm = clamp(
-             dfm + _choice.dfm_change
-             + (_old_manufacturing_penalty - _new_manufacturing_penalty),
-             0,
-             100
-         );
 
          dft = clamp(dft + _choice.dft_change, 0, 100);
 

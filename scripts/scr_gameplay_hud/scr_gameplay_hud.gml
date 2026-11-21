@@ -104,4 +104,14 @@
          "Deadline: "
          + _game.format_project_date(_game.project_deadline_date)
      );
+	 
+    // Current DRC violations
+    draw_set_color(c_black);
+
+    draw_text(
+        35,
+        450,
+        "DRC violations: " + string(_game.drc_violations)
+    );
+
  }

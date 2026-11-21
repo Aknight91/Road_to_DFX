@@ -52,9 +52,11 @@ function create_pcb_design_event_pool()
         + "The design database has declined to comment."
     );
 
-    _ignore.risk_change = 8;
-    _ignore.dfm_change = -5;
-    _ignore.sanity_change = -4;
+    
+	_ignore.drc_change = 3;
+	_ignore.risk_change = 2;
+	_ignore.dfm_change = -5;
+	_ignore.sanity_change = -4;
     _ignore.set_flags = ["cad_changes_unverified"];
 
     var _event = create_decision_event(
