@@ -30,6 +30,16 @@ function draw_primary_screen(_screen_id, _game)
 
             break;
 
+		
+        // ----------------------------------------------
+        // DRC HUNTING SCREEN
+        // ----------------------------------------------
+
+        case ScreenId.DRC_HUNT:
+
+            draw_drc_hunt_screen(_game);
+
+            break;
 
       
         // ----------------------------------------------

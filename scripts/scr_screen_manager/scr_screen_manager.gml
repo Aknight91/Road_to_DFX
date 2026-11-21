@@ -21,6 +21,7 @@ function ScreenManager(_initial_screen) constructor
 // VALIDATE SCREEN IDENTIFIERS
 // --------------------------------------------------
 
+
 is_valid_screen = function(_screen)
 {
     return (
@@ -28,8 +29,10 @@ is_valid_screen = function(_screen)
         || _screen == ScreenId.CAMPAIGN_SETUP
         || _screen == ScreenId.GAMEPLAY
         || _screen == ScreenId.CAMPAIGN_RESULTS
+        || _screen == ScreenId.DRC_HUNT
     );
 };
+
 
 
 // --------------------------------------------------

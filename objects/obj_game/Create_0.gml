@@ -1293,6 +1293,32 @@ if (!is_struct(_empty_selection))
 
 pause_confirmation_action = "";
 
+// --------------------------------------------------
+// DRC HUNT - TEMPORARY ANIMATED TARGET
+// --------------------------------------------------
+
+// Bowtie position in GUI coordinates
+drc_hunt_x = 450;
+drc_hunt_y = 270;
+
+// Movement per frame
+drc_hunt_dx = 2;
+drc_hunt_dy = 1.2;
+
+// --------------------------------------------------
+// DRC HUNT - SHOOTING STATISTICS
+// --------------------------------------------------
+
+drc_hunt_shots = 0;
+drc_hunt_hits = 0;
+drc_hunt_max_hits = 3;
+drc_hunt_cost_hours = 2;
+drc_hunt_duration_seconds = 20;
+drc_hunt_frames_remaining = 0;
+
+
+
+
 
 
 
@@ -1415,6 +1441,10 @@ debug_panel_open = false;
 	current_event_stage = EventStage.DESIGN_SETUP;
 	active_encounter = undefined;
 	
+// Track which encounter has used DRC Hunting.
+// Reset whenever a new campaign begins.
+drc_hunt_last_event_id = "";
+
 // --------------------------------------------------
 // DYNAMIC CAMPAIGN PROGRESS TRACKING
 // --------------------------------------------------

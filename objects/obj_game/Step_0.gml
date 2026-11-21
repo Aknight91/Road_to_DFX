@@ -19,6 +19,215 @@ var _overlay_at_step_start =
 
 
 // --------------------------------------------------
+// ENTER DRC HUNT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.GAMEPLAY
+&& screen_manager.can_receive_input(ScreenId.GAMEPLAY)
+&& get_campaign_phase() == CampaignPhase.CHOOSING
+&& !debug_panel_open
+&& mouse_check_button_pressed(mb_left))
+{
+    var _hunt_mouse_x = device_mouse_x_to_gui(0);
+    var _hunt_mouse_y = device_mouse_y_to_gui(0);
+
+    if (point_in_rectangle(
+        _hunt_mouse_x,
+        _hunt_mouse_y,
+        35, 480, 305, 520
+    ))
+    {
+        if (is_struct(active_encounter))
+        {
+            // One hunt per encounter, with enough
+            // engineering time left to continue work.
+            if (drc_hunt_last_event_id != active_encounter.id
+            && drc_violations > 0
+            && engineering_hours > drc_hunt_cost_hours)
+            {
+                // Mark this encounter's hunt as used.
+                drc_hunt_last_event_id = active_encounter.id;
+
+                // Charge engineering time.
+                engineering_hours -= drc_hunt_cost_hours;
+
+                // Advance the existing project calendar.
+                advance_project_work_hours(drc_hunt_cost_hours);
+
+                days_remaining = get_workdays_until_deadline();
+
+                // Apply any overdue schedule penalties.
+                apply_overdue_sanity_penalty();
+
+                // If overdue penalties cause Sanity to
+                // reach zero, start the existing crisis.
+                if (sanity <= 0 && !sanity_zero_active)
+                {
+                    sanity_zero_active = true;
+                    sanity_zero_turns_remaining = 3;
+                    software_instability = 5;
+                }
+
+                // Begin a fresh hunting session.
+                drc_hunt_shots = 0;
+                drc_hunt_hits = 0;
+				
+				// Start the 20-second hunting timer.
+				drc_hunt_frames_remaining =
+				    drc_hunt_duration_seconds
+				    * game_get_speed(gamespeed_fps);
+
+                screen_manager.navigate_to(ScreenId.DRC_HUNT);
+
+                show_debug_message(
+                    "DRC HUNT: Session started. Hours remaining = "
+                    + string(engineering_hours)
+                );
+            }
+            else
+            {
+                show_debug_message(
+                    "DRC HUNT: Unavailable for this encounter."
+                );
+            }
+        }
+
+        // Prevent the click reaching other controls.
+        mouse_clear(mb_left);
+    }
+}
+
+
+// --------------------------------------------------
+// DRC HUNT - SESSION TIMER
+// --------------------------------------------------
+
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT)
+&& drc_hunt_frames_remaining > 0
+&& drc_hunt_hits < drc_hunt_max_hits
+&& drc_violations > 0)
+{
+    drc_hunt_frames_remaining -= 1;
+}
+
+
+// --------------------------------------------------
+// DRC HUNT - MOVEMENT AND SHOOTING
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT)
+&& drc_hunt_frames_remaining > 0)
+{
+    // Move the bowtie.
+    drc_hunt_x += drc_hunt_dx;
+    drc_hunt_y += drc_hunt_dy;
+
+    // Bounce off horizontal boundaries.
+    if (drc_hunt_x <= 90 || drc_hunt_x >= 870)
+    {
+        drc_hunt_dx = -drc_hunt_dx;
+    }
+
+    // Bounce off vertical boundaries.
+    if (drc_hunt_y <= 170 || drc_hunt_y >= 355)
+    {
+        drc_hunt_dy = -drc_hunt_dy;
+    }
+
+    // ----------------------------------------------
+    // SHOOTING INPUT
+    // ----------------------------------------------
+
+    if (mouse_check_button_pressed(mb_left)
+    && drc_hunt_hits < drc_hunt_max_hits
+    && drc_violations > 0)
+    {
+        var _shot_x = device_mouse_x_to_gui(0);
+        var _shot_y = device_mouse_y_to_gui(0);
+
+        // Only count shots inside the PCB playfield.
+        if (point_in_rectangle(
+            _shot_x,
+            _shot_y,
+            60, 115, 900, 425
+        ))
+        {
+            drc_hunt_shots += 1;
+
+            // Check whether the shot hit the bowtie.
+            var _hit = point_in_rectangle(
+                _shot_x,
+                _shot_y,
+                drc_hunt_x - 20,
+                drc_hunt_y - 13,
+                drc_hunt_x + 20,
+                drc_hunt_y + 13
+            );
+
+            if (_hit)
+            {
+                drc_hunt_hits += 1;
+
+                // Remove one actual DRC violation.
+                // DFM updates through the shared calculation.
+                // Manufacturing risk remains unchanged.
+                apply_manufacturing_changes(-1, 0, 0);
+
+                // Only reposition when another hit is available.
+                if (drc_hunt_hits < drc_hunt_max_hits
+                && drc_violations > 0)
+                {
+                    drc_hunt_x = irandom_range(100, 860);
+                    drc_hunt_y = irandom_range(170, 355);
+                }
+
+                show_debug_message(
+                    "DRC HUNT: HIT! DRCs remaining = "
+                    + string(drc_violations)
+                );
+            }
+        }
+    }
+}
+
+
+// --------------------------------------------------
+// RETURN FROM DRC HUNT
+// --------------------------------------------------
+
+if (_screen_at_step_start == ScreenId.DRC_HUNT
+&& screen_manager.can_receive_input(ScreenId.DRC_HUNT))
+{
+    var _hunt_return = keyboard_check_pressed(vk_escape);
+
+    if (mouse_check_button_pressed(mb_left))
+    {
+        var _return_x = device_mouse_x_to_gui(0);
+        var _return_y = device_mouse_y_to_gui(0);
+
+        if (point_in_rectangle(
+            _return_x,
+            _return_y,
+            35, 475, 235, 520
+        ))
+        {
+            _hunt_return = true;
+        }
+    }
+
+    if (_hunt_return)
+    {
+        screen_manager.navigate_to(ScreenId.GAMEPLAY);
+
+        mouse_clear(mb_left);
+    }
+}
+
+
+// --------------------------------------------------
 // TITLE SCREEN INPUT
 // --------------------------------------------------
 
