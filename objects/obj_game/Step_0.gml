@@ -76,6 +76,9 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
 				drc_hunt_frames_remaining =
 				    drc_hunt_duration_seconds
 				    * game_get_speed(gamespeed_fps);
+				
+				// Prepare multiple bowties for this session.
+				reset_drc_hunt_targets();
 
                 screen_manager.navigate_to(ScreenId.DRC_HUNT);
 
@@ -113,42 +116,129 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
 }
 
 
+
 // --------------------------------------------------
 // DRC HUNT - MOVEMENT AND SHOOTING
 // --------------------------------------------------
 
 if (_screen_at_step_start == ScreenId.DRC_HUNT
 && screen_manager.can_receive_input(ScreenId.DRC_HUNT)
-&& drc_hunt_frames_remaining > 0)
+&& drc_hunt_frames_remaining > 0
+&& drc_hunt_hits < drc_hunt_max_hits
+&& drc_violations > 0)
 {
-    // Move the bowtie.
-    drc_hunt_x += drc_hunt_dx;
-    drc_hunt_y += drc_hunt_dy;
+    
+    
+    // ----------------------------------------------
+    // MOVE ALL ACTIVE BOWTIES
+    // ----------------------------------------------
 
-    // Bounce off horizontal boundaries.
-    if (drc_hunt_x <= 90 || drc_hunt_x >= 870)
+    for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
     {
-        drc_hunt_dx = -drc_hunt_dx;
-    }
+        var _target = drc_hunt_targets[_i];
 
-    // Bounce off vertical boundaries.
-    if (drc_hunt_y <= 170 || drc_hunt_y >= 355)
-    {
-        drc_hunt_dy = -drc_hunt_dy;
+        if (_target.active)
+        {
+            // ----------------------------------------------
+            // PAUSED BEHAVIOR
+            // ----------------------------------------------
+
+            if (_target.behavior == "pause")
+            {
+                _target.behavior_frames_remaining -= 1;
+
+                if (_target.behavior_frames_remaining <= 0)
+                {
+                    _target.behavior = "scurry";
+                    _target.behavior_frames_remaining = 0;
+                }
+            }
+
+            // ----------------------------------------------
+            // HIDDEN BEHAVIOR
+            // ----------------------------------------------
+
+            else if (_target.behavior == "hide")
+            {
+                _target.behavior_frames_remaining -= 1;
+
+                if (_target.behavior_frames_remaining <= 0)
+                {
+                    // Reappear somewhere else on the PCB.
+                    _target.x = irandom_range(110, 850);
+                    _target.y = irandom_range(185, 340);
+
+                    _target.behavior = "scurry";
+                    _target.behavior_frames_remaining = 0;
+                }
+            }
+
+            // ----------------------------------------------
+            // SCURRYING BEHAVIOR
+            // ----------------------------------------------
+
+            else
+            {
+                // Occasionally disappear.
+                if (irandom(479) == 0)
+                {
+                    _target.behavior = "hide";
+                    _target.behavior_frames_remaining =
+                        irandom_range(24, 42);
+                }
+                // Occasionally stop briefly.
+                else if (irandom(239) == 0)
+                {
+                    _target.behavior = "pause";
+                    _target.behavior_frames_remaining =
+                        irandom_range(18, 30);
+                }
+                else
+                {
+                    // Occasionally change direction and speed.
+                    if (irandom(89) == 0)
+                    {
+                        var _angle = random(360);
+                        var _speed = random_range(1.3, 2.7);
+
+                        _target.dx = lengthdir_x(_speed, _angle);
+                        _target.dy = lengthdir_y(_speed, _angle);
+                    }
+
+                    _target.x += _target.dx;
+                    _target.y += _target.dy;
+
+                    // Horizontal boundaries.
+                    if (_target.x <= 90 || _target.x >= 870)
+                    {
+                        _target.dx = -_target.dx;
+                        _target.x = clamp(_target.x, 90, 870);
+                    }
+
+                    // Vertical boundaries.
+                    if (_target.y <= 170 || _target.y >= 355)
+                    {
+                        _target.dy = -_target.dy;
+                        _target.y = clamp(_target.y, 170, 355);
+                    }
+                }
+            }
+
+            // Save all position and behavior changes.
+            drc_hunt_targets[_i] = _target;
+        }
     }
 
     // ----------------------------------------------
     // SHOOTING INPUT
     // ----------------------------------------------
 
-    if (mouse_check_button_pressed(mb_left)
-    && drc_hunt_hits < drc_hunt_max_hits
-    && drc_violations > 0)
+    if (mouse_check_button_pressed(mb_left))
     {
         var _shot_x = device_mouse_x_to_gui(0);
         var _shot_y = device_mouse_y_to_gui(0);
 
-        // Only count shots inside the PCB playfield.
+        // Only count shots inside the PCB.
         if (point_in_rectangle(
             _shot_x,
             _shot_y,
@@ -157,42 +247,54 @@ if (_screen_at_step_start == ScreenId.DRC_HUNT
         {
             drc_hunt_shots += 1;
 
-            // Check whether the shot hit the bowtie.
-            var _hit = point_in_rectangle(
-                _shot_x,
-                _shot_y,
-                drc_hunt_x - 20,
-                drc_hunt_y - 13,
-                drc_hunt_x + 20,
-                drc_hunt_y + 13
-            );
-
-            if (_hit)
+            // Check every active bowtie for a hit.
+            for (var _i = 0; _i < array_length(drc_hunt_targets); _i++)
             {
-                drc_hunt_hits += 1;
+                var _target = drc_hunt_targets[_i];
 
-                // Remove one actual DRC violation.
-                // DFM updates through the shared calculation.
-                // Manufacturing risk remains unchanged.
-                apply_manufacturing_changes(-1, 0, 0);
+                
+			if (!_target.active || _target.behavior == "hide")
+			{
+			    continue;
+			}
 
-                // Only reposition when another hit is available.
-                if (drc_hunt_hits < drc_hunt_max_hits
-                && drc_violations > 0)
-                {
-                    drc_hunt_x = irandom_range(100, 860);
-                    drc_hunt_y = irandom_range(170, 355);
-                }
 
-                show_debug_message(
-                    "DRC HUNT: HIT! DRCs remaining = "
-                    + string(drc_violations)
+                var _hit = point_in_rectangle(
+                    _shot_x,
+                    _shot_y,
+                    _target.x - 20,
+                    _target.y - 13,
+                    _target.x + 20,
+                    _target.y + 13
                 );
+
+                if (_hit)
+                {
+                    // Remove this bowtie.
+                    _target.active = false;
+                    drc_hunt_targets[_i] = _target;
+
+                    // Register exactly one hit.
+                    drc_hunt_hits += 1;
+
+                    // Remove exactly one real DRC.
+                    // The shared function adjusts DFM.
+                    apply_manufacturing_changes(-1, 0, 0);
+
+                    show_debug_message(
+                        "DRC HUNT: Target "
+                        + string(_i)
+                        + " destroyed. DRCs remaining = "
+                        + string(drc_violations)
+                    );
+
+                    // One shot can destroy only one target.
+                    break;
+                }
             }
         }
     }
 }
-
 
 // --------------------------------------------------
 // RETURN FROM DRC HUNT

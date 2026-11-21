@@ -238,56 +238,68 @@ function draw_drc_hunt_screen(_game)
     draw_line(500, 365, 500, 220);
     draw_line(500, 220, 820, 220);
 	
+
 // --------------------------------------------------
-// DRAW ANIMATED DRC BOWTIE
+// DRAW MULTIPLE ANIMATED DRC BOWTIES
 // --------------------------------------------------
 
-
-if (_game.drc_hunt_hits < _game.drc_hunt_max_hits
-&& _game.drc_violations > 0
-&& _game.drc_hunt_frames_remaining > 0)
+if (_game.drc_hunt_frames_remaining > 0
+&& _game.drc_hunt_hits < _game.drc_hunt_max_hits
+&& _game.drc_violations > 0)
 {
+    for (var _i = 0; _i < array_length(_game.drc_hunt_targets); _i++)
+    {
+        var _target = _game.drc_hunt_targets[_i];
 
-var _bx = _game.drc_hunt_x;
-var _by = _game.drc_hunt_y;
+        // Skip bowties that have been shot or hiding
+        
+		if (!_target.active || _target.behavior == "hide")
+		{
+		    continue;
+		}
 
-// Left and right bowtie wings
-draw_set_color(make_color_rgb(225, 55, 55));
 
-draw_triangle(
-    _bx - 20, _by - 13,
-    _bx,      _by,
-    _bx - 20, _by + 13,
-    false
-);
+        var _bx = _target.x;
+        var _by = _target.y;
 
-draw_triangle(
-    _bx + 20, _by - 13,
-    _bx,      _by,
-    _bx + 20, _by + 13,
-    false
-);
+        // Red bowtie wings.
+        draw_set_color(make_color_rgb(225, 55, 55));
 
-// Dark wing outlines
-draw_set_color(c_black);
+        draw_triangle(
+            _bx - 20, _by - 13,
+            _bx,      _by,
+            _bx - 20, _by + 13,
+            false
+        );
 
-draw_triangle(
-    _bx - 20, _by - 13,
-    _bx,      _by,
-    _bx - 20, _by + 13,
-    true
-);
+        draw_triangle(
+            _bx + 20, _by - 13,
+            _bx,      _by,
+            _bx + 20, _by + 13,
+            false
+        );
 
-draw_triangle(
-    _bx + 20, _by - 13,
-    _bx,      _by,
-    _bx + 20, _by + 13,
-    true
-);
+        // Black outlines.
+        draw_set_color(c_black);
 
-// Center of the bowtie
-draw_set_color(c_yellow);
-draw_circle(_bx, _by, 5, false);
+        draw_triangle(
+            _bx - 20, _by - 13,
+            _bx,      _by,
+            _bx - 20, _by + 13,
+            true
+        );
+
+        draw_triangle(
+            _bx + 20, _by - 13,
+            _bx,      _by,
+            _bx + 20, _by + 13,
+            true
+        );
+
+        // Yellow center.
+        draw_set_color(c_yellow);
+        draw_circle(_bx, _by, 5, false);
+    }
 }
 
 // --------------------------------------------------
@@ -375,11 +387,52 @@ else
     );
 }
 
-    draw_text(
-        90,
-        395,
-        "The DRC bowties haven't escaped yet."
-    );
+    
+// --------------------------------------------------
+// DRC HUNT - TEMPORARY BEHAVIOR DIAGNOSTICS
+// --------------------------------------------------
+
+var _scurrying = 0;
+var _paused = 0;
+var _hidden = 0;
+
+// Count the current behavior of every active bowtie.
+for (var _i = 0; _i < array_length(_game.drc_hunt_targets); _i++)
+{
+    var _target = _game.drc_hunt_targets[_i];
+
+    if (!_target.active)
+    {
+        continue;
+    }
+
+    switch (_target.behavior)
+    {
+        case "scurry":
+            _scurrying += 1;
+            break;
+
+        case "pause":
+            _paused += 1;
+            break;
+
+        case "hide":
+            _hidden += 1;
+            break;
+    }
+}
+
+// Display the counts along the bottom of the PCB.
+draw_set_color(c_white);
+
+draw_text(
+    90,
+    395,
+    "SCURRY: " + string(_scurrying)
+    + "    PAUSED: " + string(_paused)
+    + "    HIDDEN: " + string(_hidden)
+);
+
 
     // Return button
     draw_set_color(make_color_rgb(225, 225, 225));
