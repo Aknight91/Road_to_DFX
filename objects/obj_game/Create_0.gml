@@ -1314,9 +1314,15 @@ drc_hunt_targets = [];
 
 // Target initialization is handled by scr_drc_hunt_targets.
 
-
-// Shared PCB scene definition.
+// Shared PCB geometry used by the DRC Hunting renderer.
 drc_hunt_scene = drc_hunt_create_scene();
+
+
+
+
+
+
+
 
 
 /// @description Initialize campaign starting statistics
@@ -2655,6 +2661,9 @@ start_campaign = function()
     // Reset campaign resources, calendar, progress,
     // encounter history, flags, and outcome state.
     initialize_campaign_state();
+
+    // Assign three random coworkers to the new campaign.
+    advice_state = advice_start_campaign();
 
     // --------------------------------------------------
     // BEGIN DYNAMIC CAMPAIGN AUTOMATICALLY
