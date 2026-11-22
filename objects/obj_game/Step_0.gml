@@ -19,6 +19,7 @@ var _overlay_at_step_start =
 
 // Advice navigation is delegated to the independent hallway script.
 advice_handle_input(id, _screen_at_step_start);
+water_cooler_handle_input(id, _screen_at_step_start);
 
 
 // --------------------------------------------------

@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_advice_strategies",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_advice_strategies",
+  "parent":{
+    "name":"Ask_a_Coworker",
+    "path":"folders/04_Activities/Ask_a_Coworker.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

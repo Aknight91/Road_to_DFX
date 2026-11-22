@@ -1,5 +1,5 @@
 /// @description Ask for Advice - campaign roster and per-encounter consultation state
-/// @note Standalone module. No obj_game Create/Step code is required for Part 1.
+/// @note Step 66 Part 4: track consultations by live encounter identity.
 
 // Select three distinct coworkers from the full 15-person roster.
 // This is called ONCE per campaign, not on every visit to the advice screen.
@@ -50,23 +50,35 @@ function advice_create_campaign_state(_roster)
     return {
         coworkers: _selected,
         encounter_id: "",
+        encounter_ref: undefined,
+        original_choice_count: 0,
+        selected_coworker_id: "",
         consulted_ids: [],
         unlocked_choices: []
     };
 }
 
-// Move into a new encounter without rerolling the campaign's three coworkers.
-// Returning from an office to the SAME encounter preserves consultation history.
-function advice_begin_encounter(_state, _encounter_id)
+// Associate consultation history with this exact active encounter.
+// The same event ID may appear again in a later campaign encounter,
+// so a struct reference is required to distinguish the two visits.
+// Returning to the same unresolved encounter preserves all consultations.
+function advice_begin_encounter(_state, _encounter_id, _encounter_ref)
 {
-    if (!is_struct(_state) || !is_string(_encounter_id) || _encounter_id == "")
+    if (!is_struct(_state)
+    || !is_string(_encounter_id)
+    || _encounter_id == ""
+    || !is_struct(_encounter_ref)
+    || !is_array(_encounter_ref.choices))
     {
         return false;
     }
 
-    if (_state.encounter_id != _encounter_id)
+    if (_state.encounter_ref != _encounter_ref)
     {
         _state.encounter_id = _encounter_id;
+        _state.encounter_ref = _encounter_ref;
+        _state.original_choice_count = array_length(_encounter_ref.choices);
+        _state.selected_coworker_id = "";
         _state.consulted_ids = [];
         _state.unlocked_choices = [];
     }

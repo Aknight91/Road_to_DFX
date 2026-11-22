@@ -15,8 +15,10 @@ enum ScreenId
     CAMPAIGN_RESULTS,
     DRC_HUNT,
     ADVICE_HALLWAY,
-    ADVICE_OFFICE
+    ADVICE_OFFICE,
+    WATER_COOLER
 }
+
 
 
 // Temporary interfaces displayed over an existing screen

@@ -2664,6 +2664,7 @@ start_campaign = function()
 
     // Assign three random coworkers to the new campaign.
     advice_state = advice_start_campaign();
+	water_cooler_state = water_cooler_new_campaign_state();
 
     // --------------------------------------------------
     // BEGIN DYNAMIC CAMPAIGN AUTOMATICALLY

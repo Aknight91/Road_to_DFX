@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_water_cooler_state",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_water_cooler_state",
+  "parent":{
+    "name":"Water_Cooler",
+    "path":"folders/04_Activities/Water_Cooler.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

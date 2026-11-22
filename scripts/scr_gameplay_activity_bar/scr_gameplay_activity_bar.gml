@@ -68,27 +68,10 @@ function draw_gameplay_activity_bar(_game, _phase)
     }
 
     // --------------------------------------------------
-    // WATER COOLER: visibly disabled until implemented.
-    // No click behavior is attached.
+    // WATER COOLER: independent activity module owns the button.
     // --------------------------------------------------
 
-    var _water = _buttons.water;
-    draw_set_color(make_color_rgb(155, 155, 155));
-    draw_rectangle(
-        _water.x, _water.y,
-        _water.x + _water.width, _water.y + _water.height,
-        false
-    );
-    draw_set_color(c_black);
-    draw_rectangle(
-        _water.x, _water.y,
-        _water.x + _water.width, _water.y + _water.height,
-        true
-    );
-
-    draw_text(_water.x + _water.width / 2, _water.y + 9, "WATER");
-    draw_text(_water.x + _water.width / 2, _water.y + 39, "COOLER");
-    draw_text(_water.x + _water.width / 2, _water.y + 59, "SOON");
+    draw_water_cooler_entry_button(_game);
 
     // The middle activity slot is drawn by the Advice system.
     draw_set_halign(fa_left);

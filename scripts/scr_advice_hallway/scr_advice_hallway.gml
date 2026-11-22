@@ -1,5 +1,5 @@
-/// @description Ask for Advice - hallway and office preview screens
-// Standalone input and rendering. No campaign resource costs yet.
+/// @description Ask for Advice - hallway and playable consultation offices
+// Navigation, input, and office UI stay out of obj_game.
 
 function advice_entry_bounds()
 {
@@ -10,6 +10,11 @@ function advice_entry_bounds()
 function advice_back_bounds()
 {
     return { x: 35, y: 475, width: 230, height: 45 };
+}
+
+function advice_consult_bounds()
+{
+    return { x: 560, y: 475, width: 300, height: 45 };
 }
 
 function advice_coworker_bounds(_index)
@@ -60,7 +65,8 @@ function advice_handle_input(_game, _screen_at_start)
             {
                 if (advice_begin_encounter(
                     _game.advice_state,
-                    _game.active_encounter.id
+                    _game.active_encounter.id,
+                    _game.active_encounter
                 ))
                 {
                     _manager.navigate_to(ScreenId.ADVICE_HALLWAY);
@@ -102,8 +108,7 @@ function advice_handle_input(_game, _screen_at_start)
         for (var _i = 0; _i < array_length(_coworkers); _i++)
         {
             var _npc = _coworkers[_i];
-            if (advice_point_in_bounds(_mx, _my, advice_coworker_bounds(_i))
-            && advice_can_consult(_game.advice_state, _npc.id))
+            if (advice_point_in_bounds(_mx, _my, advice_coworker_bounds(_i)))
             {
                 // Selecting an office does not count as consultation.
                 _game.advice_state.selected_coworker_id = _npc.id;
@@ -115,7 +120,7 @@ function advice_handle_input(_game, _screen_at_start)
         return;
     }
 
-    // OFFICE PREVIEW: navigation only, no time cost or advice yet.
+    // OFFICE: optional paid consultation or return navigation.
     if (_screen_at_start == ScreenId.ADVICE_OFFICE)
     {
         if (!_manager.can_receive_input(ScreenId.ADVICE_OFFICE))
@@ -137,6 +142,20 @@ function advice_handle_input(_game, _screen_at_start)
             {
                 _manager.navigate_to(ScreenId.ADVICE_HALLWAY);
                 mouse_clear(mb_left);
+                return;
+            }
+
+            if (advice_point_in_bounds(_mx, _my, advice_consult_bounds())
+            && is_struct(_game.advice_state))
+            {
+                advice_consult_coworker(
+                    _game,
+                    _game.advice_state.selected_coworker_id
+                );
+
+                // The office stays open so the player can see the result.
+                mouse_clear(mb_left);
+                return;
             }
         }
     }
@@ -192,7 +211,7 @@ function draw_advice_hallway_screen(_game)
 
     draw_set_color(c_black);
     draw_text(140, 110, "YOUR COWORKERS");
-    draw_text(140, 132, "Select an office to visit. No engineering time is charged yet.");
+    draw_text(140, 132, "Visiting is free. Consultation costs engineering hours.");
 
     if (is_struct(_game.advice_state))
     {
@@ -250,7 +269,98 @@ function draw_advice_office_screen(_game)
         draw_text(140, 140, "No coworker selected.");
     }
 
-    draw_text(140, 250, "OFFICE PREVIEW - CONSULTATION NOT IMPLEMENTED YET");
-    draw_text(140, 287, "No hours spent, no advice recorded, no event choices changed.");
+    var _state = _game.advice_state;
+    var _cost = advice_consultation_cost_hours();
+    var _can_consult = is_struct(_npc)
+        && advice_can_consult(_state, _npc.id);
+    var _can_afford = _game.engineering_hours >= _cost;
+
+    draw_set_color(c_black);
+
+    if (_can_consult)
+    {
+        draw_text_ext(
+            140, 238,
+            "Current event: " + _game.active_encounter.title,
+            -1, 690
+        );
+        draw_text(140, 271,
+            "Consultation cost: " + string(_cost) + " engineering hours.");
+        draw_text(140, 298,
+            "Hours accumulate toward the next 8-hour workday.");
+    }
+    else if (is_struct(_npc))
+    {
+        draw_text(140, 205, "CONSULTATION COMPLETE - NEW EVENT CHOICE UNLOCKED");
+
+        for (var _j = 0; _j < array_length(_state.unlocked_choices); _j++)
+        {
+            var _choice = _state.unlocked_choices[_j];
+            if (_choice.advice_coworker_id == _npc.id)
+            {
+                // All of these fields are attached to the temporary
+                // choice by scr_advice_consultation. The office never
+                // recomputes consequences or campaign state.
+                draw_text_ext(
+                    140, 234,
+                    _choice.advice_dialogue,
+                    -1, 690
+                );
+
+                draw_text_ext(
+                    140, 299,
+                    "Recommended: " + _choice.advice_source_text,
+                    -1, 690
+                );
+
+                draw_text_ext(
+                    140, 351,
+                    "Tradeoffs: " + _choice.advice_tradeoffs,
+                    -1, 690
+                );
+
+                draw_text(140, 402,
+                    "Specialty: " + _choice.advice_focus_text);
+
+                draw_text_ext(
+                    140, 426,
+                    "Modifier if followed: " + _choice.advice_bonus_text,
+                    -1, 690
+                );
+                break;
+            }
+        }
+    }
+    else
+    {
+        draw_text(140, 238, "Return to the hallway to choose an office.");
+    }
+
     advice_draw_back_button("BACK TO HALLWAY");
+
+    // Shared bounds for button drawing and office mouse interaction.
+    var _b = advice_consult_bounds();
+    var _enabled = _can_consult && _can_afford;
+    draw_set_color(_enabled
+        ? make_color_rgb(225, 225, 225)
+        : make_color_rgb(155, 155, 155));
+    draw_rectangle(_b.x, _b.y,
+        _b.x + _b.width, _b.y + _b.height, false);
+    draw_set_color(c_black);
+    draw_rectangle(_b.x, _b.y,
+        _b.x + _b.width, _b.y + _b.height, true);
+
+    if (!_can_consult)
+    {
+        draw_text(_b.x + 15, _b.y + 14, "ALREADY CONSULTED");
+    }
+    else if (!_can_afford)
+    {
+        draw_text(_b.x + 15, _b.y + 14, "NOT ENOUGH HOURS");
+    }
+    else
+    {
+        draw_text(_b.x + 15, _b.y + 14,
+            "ASK FOR ADVICE - " + string(_cost) + " HRS");
+    }
 }
