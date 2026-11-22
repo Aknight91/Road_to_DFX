@@ -30,6 +30,8 @@ is_valid_screen = function(_screen)
         || _screen == ScreenId.GAMEPLAY
         || _screen == ScreenId.CAMPAIGN_RESULTS
         || _screen == ScreenId.DRC_HUNT
+        || _screen == ScreenId.ADVICE_HALLWAY
+        || _screen == ScreenId.ADVICE_OFFICE
     );
 };
 

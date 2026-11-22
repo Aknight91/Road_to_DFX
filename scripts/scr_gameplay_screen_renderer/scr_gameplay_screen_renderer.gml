@@ -16,15 +16,18 @@ function draw_gameplay_screen(_game)
         draw_rectangle(0, 0, 960, 540, false);
 
 
-        // --------------------------------------------------
-        // TITLE BAR
-        // --------------------------------------------------
+        // The gameplay screen is now a four-panel shell.
+        // Title branding belongs to the title screen, not
+        // over the event-image/choice panel content.
 
-        draw_set_color(make_color_rgb(0, 0, 128));
-        draw_rectangle(20, 20, 940, 75, false);
+        // --------------------------------------------------
+        // STEP 67B - SHARED FOUR-PANEL FRAMES
+        // --------------------------------------------------
+        // Geometry comes exclusively from scr_ui_regions.
+        // The HUD, scene, choices, review and activities now
+        // obtain their positions from these shared regions.
 
-        draw_set_color(c_white);
-        draw_text(35, 35, "ROAD TO DFX");
+        draw_gameplay_panel_frames();
 
 
         // --------------------------------------------------
@@ -111,94 +114,39 @@ function draw_gameplay_screen(_game)
 
 else
 {
+    var _choices_panel = get_ui_regions().panels.choices;
+    var _left = _choices_panel.x + 12;
+    var _width = _choices_panel.width - 24;
+
     draw_set_color(c_black);
-
-    draw_text(370, 160, "ROAD TO DFX");
-
-    draw_text(370, 210, game_message);
-
+    draw_text(_left, _choices_panel.y + 25, "ROAD TO DFX");
     draw_text_ext(
-        370,
-        260,
+        _left,
+        _choices_panel.y + 60,
+        game_message,
+        -1,
+        _width
+    );
+    draw_text_ext(
+        _left,
+        _choices_panel.y + 130,
         result_message,
         -1,
-        520
-    );
-
-    draw_text(
-        370,
-        455,
-        "Press ESC for the Pause menu."
+        _width
     );
 }
 
        
-        // --------------------------------------------------
-        // PROTOTYPE LABEL
-        // --------------------------------------------------
-
-        // Relocate the label into the title bar.
-        draw_set_color(c_white);
-
-        draw_text(
-            35,
-            55,
-            "ROAD TO DFX - PROTOTYPE"
-        );
 
         
 // --------------------------------------------------
-// DRC HUNT ENTRY BUTTON
+// STEP 67B2 - SHARED BOTTOM-RIGHT ACTIVITY BUTTONS
 // --------------------------------------------------
+// Draws Hunt and a disabled Water Cooler placeholder.
+// The Advice button remains owned by scr_advice_hallway.
+// All hitboxes come from scr_ui_regions.
 
-if (_phase == CampaignPhase.CHOOSING)
-{
-    var _hunt_used = false;
-
-    if (is_struct(active_encounter))
-    {
-        _hunt_used =
-            drc_hunt_last_event_id == active_encounter.id;
-    }
-
-    var _hunt_available =
-        is_struct(active_encounter)
-        && !_hunt_used
-        && drc_violations > 0
-        && engineering_hours > drc_hunt_cost_hours;
-
-    // Available and unavailable button colors.
-    if (_hunt_available)
-    {
-        draw_set_color(make_color_rgb(225, 225, 225));
-    }
-    else
-    {
-        draw_set_color(make_color_rgb(155, 155, 155));
-    }
-
-    draw_rectangle(35, 480, 305, 520, false);
-
-    draw_set_color(c_black);
-    draw_rectangle(35, 480, 305, 520, true);
-
-    if (_hunt_used)
-    {
-        draw_text(55, 490, "HUNT ALREADY USED");
-    }
-    else if (_hunt_available)
-    {
-        draw_text(
-            55,
-            490,
-            "HUNT DRCs - " + string(drc_hunt_cost_hours) + " HOURS"
-        );
-    }
-    else
-    {
-        draw_text(55, 490, "HUNT UNAVAILABLE");
-    }
-}
+draw_gameplay_activity_bar(id, _phase);
 
 
 

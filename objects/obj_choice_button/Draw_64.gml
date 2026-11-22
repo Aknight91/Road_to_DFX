@@ -1,36 +1,45 @@
+/// @description Draw a scrollable, clipped gameplay choice button
 
-/// @description Draw reusable choice button
-
-// Verify the controller exists
 if (!instance_exists(controller))
 {
     exit;
 }
 
-// Only draw choice buttons on the gameplay screen
 if (controller.screen_manager.get_current_screen()
     != ScreenId.GAMEPLAY)
 {
     exit;
 }
 
-
-// Only draw buttons during the CHOOSING phase
 if (controller.get_campaign_phase() != CampaignPhase.CHOOSING)
 {
     exit;
 }
 
-
-// Reject uninitialized buttons
 if (choice_index < 0)
 {
     exit;
 }
 
-// --------------------------------------------------
-// BUTTON BACKGROUND
-// --------------------------------------------------
+var _event = controller.get_current_campaign_event();
+if (!is_struct(_event))
+{
+    exit;
+}
+
+var _region = get_ui_regions(_event).choices;
+var _scroll = gameplay_choice_scroll_state(_event).offset;
+var _visible_y = button_y - _scroll;
+
+// Skip fully out-of-view buttons.
+if (_visible_y + button_height <= _region.y
+|| _visible_y >= _region.y + _region.height)
+{
+    exit;
+}
+
+// Clip partially visible buttons to the shared choice panel.
+var _previous_scissor = gameplay_choice_begin_clip(_region);
 
 if (is_hovered)
 {
@@ -43,35 +52,28 @@ else
 
 draw_rectangle(
     button_x,
-    button_y,
+    _visible_y,
     button_x + button_width,
-    button_y + button_height,
+    _visible_y + button_height,
     false
 );
 
-// --------------------------------------------------
-// BUTTON BORDER
-// --------------------------------------------------
-
 draw_set_color(c_black);
-
 draw_rectangle(
     button_x,
-    button_y,
+    _visible_y,
     button_x + button_width,
-    button_y + button_height,
+    _visible_y + button_height,
     true
 );
 
-// --------------------------------------------------
-// BUTTON TEXT
-// --------------------------------------------------
-
-// Display the label assigned by the controller
 draw_text_ext(
     button_x + 8,
-    button_y + 8,
+    _visible_y + 8,
     choice_label,
     -1,
     button_width - 16
 );
+
+// Always restore GPU state before drawing the next UI element.
+gameplay_choice_end_clip(_previous_scissor);

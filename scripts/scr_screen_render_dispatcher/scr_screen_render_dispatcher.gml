@@ -27,6 +27,7 @@ function draw_primary_screen(_screen_id, _game)
         case ScreenId.GAMEPLAY:
 
             draw_gameplay_screen(_game);
+            draw_advice_entry_button(_game);
 
             break;
 
@@ -42,6 +43,19 @@ function draw_primary_screen(_screen_id, _game)
             break;
 
       
+        // ----------------------------------------------
+        // ADVICE HALLWAY AND OFFICE PREVIEW
+        // ----------------------------------------------
+
+        case ScreenId.ADVICE_HALLWAY:
+            draw_advice_hallway_screen(_game);
+            break;
+
+        case ScreenId.ADVICE_OFFICE:
+            draw_advice_office_screen(_game);
+            break;
+
+
         // ----------------------------------------------
         // CAMPAIGN SETUP SCREEN
         // ----------------------------------------------

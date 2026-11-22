@@ -17,6 +17,9 @@ var _screen_at_step_start =
 var _overlay_at_step_start =
     screen_manager.get_top_overlay();
 
+// Advice navigation is delegated to the independent hallway script.
+advice_handle_input(id, _screen_at_step_start);
+
 
 // --------------------------------------------------
 // ENTER DRC HUNT
@@ -31,10 +34,16 @@ if (_screen_at_step_start == ScreenId.GAMEPLAY
     var _hunt_mouse_x = device_mouse_x_to_gui(0);
     var _hunt_mouse_y = device_mouse_y_to_gui(0);
 
+    // Share exactly the same Hunt button bounds as the renderer.
+    var _hunt_bounds = get_ui_regions().activity_buttons.hunt;
+
     if (point_in_rectangle(
         _hunt_mouse_x,
         _hunt_mouse_y,
-        35, 480, 305, 520
+        _hunt_bounds.x,
+        _hunt_bounds.y,
+        _hunt_bounds.x + _hunt_bounds.width,
+        _hunt_bounds.y + _hunt_bounds.height
     ))
     {
         if (is_struct(active_encounter))

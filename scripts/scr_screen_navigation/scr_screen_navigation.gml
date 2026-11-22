@@ -13,7 +13,9 @@ enum ScreenId
     CAMPAIGN_SETUP,
     GAMEPLAY,
     CAMPAIGN_RESULTS,
-    DRC_HUNT
+    DRC_HUNT,
+    ADVICE_HALLWAY,
+    ADVICE_OFFICE
 }
 
 

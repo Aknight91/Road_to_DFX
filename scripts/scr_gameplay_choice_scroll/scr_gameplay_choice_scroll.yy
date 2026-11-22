@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_gameplay_choice_scroll",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_gameplay_choice_scroll",
+  "parent":{
+    "name":"Gameplay_UI",
+    "path":"folders/03_User_Interface/Gameplay_UI.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

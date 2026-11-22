@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_gameplay_panel_renderer",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_gameplay_panel_renderer",
+  "parent":{
+    "name":"Screen_Renderers",
+    "path":"folders/03_User_Interface/Screen_Renderers.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
