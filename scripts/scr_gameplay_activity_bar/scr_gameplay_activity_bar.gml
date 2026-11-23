@@ -1,6 +1,6 @@
 /// @description Road to DFX - shared gameplay activity bar
 
-// Visual presentation only. The DRC Hunting and Advice systems
+// Visual presentation only. The DRC Hunting and coworker chat systems
 // retain ownership of their own input and gameplay consequences.
 // All button positions are provided by scr_ui_regions.
 
@@ -68,12 +68,29 @@ function draw_gameplay_activity_bar(_game, _phase)
     }
 
     // --------------------------------------------------
-    // WATER COOLER: independent activity module owns the button.
+    // THIRD ACTIVITY: reserved for a future mechanic.
+    // Disabled placeholder; no mouse handler is registered.
     // --------------------------------------------------
 
-    draw_water_cooler_entry_button(_game);
+    var _water = _buttons.water;
+    draw_set_color(make_color_rgb(155, 155, 155));
+    draw_rectangle(
+        _water.x, _water.y,
+        _water.x + _water.width, _water.y + _water.height,
+        false
+    );
+    draw_set_color(c_black);
+    draw_rectangle(
+        _water.x, _water.y,
+        _water.x + _water.width, _water.y + _water.height,
+        true
+    );
 
-    // The middle activity slot is drawn by the Advice system.
+    draw_text(_water.x + _water.width / 2, _water.y + 9, "ACTIVITY");
+    draw_text(_water.x + _water.width / 2, _water.y + 39, "TBD");
+    draw_text(_water.x + _water.width / 2, _water.y + 59, "DISABLED");
+
+    // The middle slot (Water Cooler Chat) is drawn by the advice subsystem.
     draw_set_halign(fa_left);
     draw_set_color(c_white);
 }

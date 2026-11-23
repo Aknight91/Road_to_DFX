@@ -1,4 +1,4 @@
-/// @description Ask for Advice - hallway and playable consultation offices
+/// @description Water Cooler Chat - existing coworker hallway and consultations
 // Navigation, input, and office UI stay out of obj_game.
 
 function advice_entry_bounds()
@@ -177,11 +177,12 @@ function draw_advice_entry_button(_game)
     draw_set_color(c_black);
     draw_rectangle(_b.x, _b.y, _b.x + _b.width, _b.y + _b.height, true);
 
-    // Temporary icon/label for the narrower activity slot.
-    // Both drawing and hit testing use advice_entry_bounds().
+    // Visible title only; the existing advice subsystem owns this action.
+    // Drawing and hit testing still use advice_entry_bounds().
     draw_set_halign(fa_center);
-    draw_text(_b.x + _b.width / 2, _b.y + 9, "?");
-    draw_text(_b.x + _b.width / 2, _b.y + 45, "ADVICE");
+    draw_text(_b.x + _b.width / 2, _b.y + 9, "WATER");
+    draw_text(_b.x + _b.width / 2, _b.y + 34, "COOLER");
+    draw_text(_b.x + _b.width / 2, _b.y + 59, "CHAT");
     draw_set_halign(fa_left);
 }
 
@@ -207,7 +208,7 @@ function advice_draw_background(_heading)
 
 function draw_advice_hallway_screen(_game)
 {
-    advice_draw_background("ASK FOR ADVICE");
+    advice_draw_background("WATER COOLER CHAT");
 
     draw_set_color(c_black);
     draw_text(140, 110, "YOUR COWORKERS");
@@ -239,7 +240,7 @@ function draw_advice_hallway_screen(_game)
 
 function draw_advice_office_screen(_game)
 {
-    advice_draw_background("COWORKER OFFICE");
+    advice_draw_background("WATER COOLER CHAT - OFFICE");
 
     var _npc = undefined;
     if (is_struct(_game.advice_state)
@@ -361,6 +362,6 @@ function draw_advice_office_screen(_game)
     else
     {
         draw_text(_b.x + 15, _b.y + 14,
-            "ASK FOR ADVICE - " + string(_cost) + " HRS");
+            "CHAT WITH COWORKER - " + string(_cost) + " HRS");
     }
 }
