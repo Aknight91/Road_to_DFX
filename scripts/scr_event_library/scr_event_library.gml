@@ -23,12 +23,12 @@ function create_event_library()
     };
 
     // One owner per project phase, each producing standard event structs.
-    // RELEASE is intentionally empty until its content pack is built.
     var _sources = [
         create_pcb_design(),
         create_pcb_placement(),
         create_pcb_routing(),
-        create_pcb_manufacturer_review()
+        create_pcb_manufacturer_review(),
+        create_pcb_release()
     ];
 
     for (var _s = 0; _s < array_length(_sources); _s++)

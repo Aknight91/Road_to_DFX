@@ -37,8 +37,8 @@ function get_campaign_difficulty_profile(_difficulty)
     // Current verified prototype starting conditions.
     // Min and max are equal until difficulty balancing.
     var _profile = {
-        engineering_hours_min: 100,
-        engineering_hours_max: 100,
+        engineering_hours_min: 250,
+        engineering_hours_max: 250,
 
         budget_min: 100,
         budget_max: 100,

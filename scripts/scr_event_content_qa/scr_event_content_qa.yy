@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_event_content_qa",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_event_content_qa",
+  "parent":{
+    "name":"Event_Content",
+    "path":"folders/02_Campaign/Event_Content.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
