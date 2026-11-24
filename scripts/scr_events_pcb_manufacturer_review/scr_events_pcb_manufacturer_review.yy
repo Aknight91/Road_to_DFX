@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_events_pcb_manufacturer_review",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_events_pcb_manufacturer_review",
+  "parent":{
+    "name":"Event_Content",
+    "path":"folders/02_Campaign/Event_Content.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}

@@ -85,29 +85,16 @@ function gameplay_choice_scroll_update(_event)
     }
 }
 
-// GameMaker's GPU scissor uses back-buffer pixels rather than GUI pixels.
-// Convert the shared GUI region before clipping a Draw GUI button.
-// The returned value must be restored with gameplay_choice_end_clip().
+// Preserve the verified choice-button clipping interface.
+// The shared utility now owns the actual GUI-to-window conversion.
 function gameplay_choice_begin_clip(_region)
 {
-    var _previous = gpu_get_scissor();
-
-    var _sx = window_get_width() / max(1, display_get_gui_width());
-    var _sy = window_get_height() / max(1, display_get_gui_height());
-
-    gpu_set_scissor(
-        floor(_region.x * _sx),
-        floor(_region.y * _sy),
-        max(1, ceil(_region.width * _sx)),
-        max(1, ceil(_region.height * _sy))
-    );
-
-    return _previous;
+    return ui_clip_begin(_region);
 }
 
 function gameplay_choice_end_clip(_previous)
 {
-    gpu_set_scissor(_previous);
+    ui_clip_end(_previous);
 }
 
 // A small, non-interactive scrollbar beside the choices.

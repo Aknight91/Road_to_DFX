@@ -65,6 +65,17 @@ function get_ui_regions(_event = undefined)
     var _review_top = _margin_y + round(76 * _sy);
     var _review_bottom = _margin_y + _top_height - round(58 * _sy);
 
+    // --------------------------------------------------
+    // STEP 69A.1 - FINAL SUMMARY CONTENT
+    // --------------------------------------------------
+    // The same right-hand panel used by decisions also owns
+    // final outcomes. Derive its text viewport and scrollbar
+    // from the shared choice-panel geometry.
+
+    var _summary_message_y = _margin_y + round(122 * _sy);
+    var _summary_message_bottom =
+        _margin_y + _top_height - round(14 * _sy);
+
     return {
         // Future Oregon Trail-style panel boundaries.
         // Border colors and artwork are NOT defined here.
@@ -129,6 +140,33 @@ function get_ui_regions(_event = undefined)
             y: _choice_top,
             width: _choice_width,
             height: max(0, _choice_bottom - _choice_top)
+        },
+
+        // Final campaign outcome. Status statistics remain
+        // in the permanent lower-left project-status panel.
+        campaign_summary: {
+            title: {
+                x: _choice_x,
+                y: _margin_y + round(20 * _sy)
+            },
+            heading: {
+                x: _choice_x,
+                y: _margin_y + round(56 * _sy),
+                width: _choice_width,
+                height: round(54 * _sy)
+            },
+            message: {
+                x: _choice_x,
+                y: _summary_message_y,
+                width: max(1, _choice_width -
+                    _scrollbar_width - _scrollbar_gap),
+                height: max(1, _summary_message_bottom -
+                    _summary_message_y)
+            },
+            scrollbar: {
+                x: _choice_x + _choice_width - _scrollbar_width,
+                width: _scrollbar_width
+            }
         },
 
         // Existing result scroller and Continue button use

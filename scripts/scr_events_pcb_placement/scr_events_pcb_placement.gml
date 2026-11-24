@@ -1,112 +1,120 @@
+/// @description PCB Placement events and existing Placement content pack
+// Component sourcing that affects placement belongs here, not database intake.
 
-/// @description PCB Placement stage event definitions
-
-// --------------------------------------------------
-// CREATE PCB PLACEMENT EVENT POOL
-// --------------------------------------------------
-
-function create_pcb_placement_event_pool()
+function create_pcb_placement()
 {
-    var _events = [];
-
-    // --------------------------------------------------
-    // PCB-0009: ASSEMBLY ACCESS CONFLICT
-    // Stage: PLACEMENT
-    // --------------------------------------------------
-
-    // OPTION A: Correct the component placement
-
-    var _reposition = create_event_choice(
-        "PCB-0009-A",
-        "Reposition the capacitor and nearby components",
-        "The component placement has been revised. "
-        + "Assembly tooling now has sufficient access."
-    );
-
-    _reposition.hours_cost = 6;
-    _reposition.dfa_change = 5;
-    _reposition.dfm_change = 2;
-    _reposition.sanity_change = -3;
-
-
-    // OPTION B: Coordinate with assembly engineering
-
-    var _tooling_review = create_event_choice(
-        "PCB-0009-B",
-        "Ask assembly to qualify alternate tooling",
-        "Assembly engineering approved an alternate "
-        + "tooling process. Production costs increased."
-    );
-
-    _tooling_review.hours_cost = 3;
-    _tooling_review.days_cost = 1;
-    _tooling_review.budget_change = -5;
-    _tooling_review.dfa_change = 2;
-    _tooling_review.sanity_change = -2;
-
-
-    // OPTION C: Replace the tall component
-
-    var _replace_component = create_event_choice(
-        "PCB-0009-C",
-        "Replace the capacitor with a low-profile part",
-        "A lower-profile capacitor has been approved. "
-        + "The BOM and placement have been updated."
-    );
-
-    _replace_component.hours_cost = 8;
-    _replace_component.budget_change = -8;
-    _replace_component.dfa_change = 4;
-    _replace_component.dfm_change = 3;
-    _replace_component.sanity_change = -4;
-
-
-    // OPTION D: Accept the assembly risk
-
-    var _manual_assembly = create_event_choice(
-        "PCB-0009-D",
-        "Accept manual assembly and keep the placement",
-        "The placement remains unchanged. Assembly "
-        + "has warned that manual intervention may "
-        + "increase production defects and costs."
-    );
-
-    _manual_assembly.hours_cost = 1;
-    _manual_assembly.dfa_change = -6;
-    _manual_assembly.risk_change = 7;
-    _manual_assembly.sanity_change = -3;
-
-    _manual_assembly.set_flags = [
-        "assembly_access_unverified"
+    var _specs = [
+        {
+            id: "PCB-0005",
+            category: EventCategory.RESOURCE,
+            title: "CONNECTOR LEAD TIME: SIX MONTHS OF NO",
+            description: "Purchasing discovers the specified connector has a 26-week lead time. Production starts considerably sooner. The part is available just in time for the next product generation.",
+            choices: [
+                {
+                    text: "Qualify an available alternate connector",
+                    result: "An alternate passes engineering review and enters the BOM. A real component replaces a very attractive delivery estimate.",
+                    hours_cost: 6,
+                    risk_change: -2,
+                    dfm_change: 3,
+                    sanity_change: -3
+                },
+                {
+                    text: "Pay the premium for the original part",
+                    result: "Purchasing finds scarce stock. Finance calls it a learning opportunity; the invoice calls it something else.",
+                    hours_cost: 1,
+                    days_cost: 1,
+                    budget_change: -15,
+                    sanity_change: -1
+                },
+                {
+                    text: "Redesign around a stocked connector",
+                    result: "The interface is redesigned around available hardware. Extra work now saves a suspense thriller at production release.",
+                    hours_cost: 10,
+                    dfa_change: 4,
+                    dfm_change: 2,
+                    sanity_change: -4
+                },
+                {
+                    text: "Keep the BOM and trust the supply chain",
+                    result: "The original connector remains unavailable. Your sourcing strategy is now an inspirational poster about patience.",
+                    risk_change: 7,
+                    dfm_change: -5,
+                    sanity_change: -3,
+                    set_flags: ["connector_supply_unresolved"]
+                }
+            ]
+        },
+        {
+            id: "PCB-0009",
+            category: EventCategory.ENGINEERING,
+            title: "ASSEMBLY TOOLING VS. GIANT CAPACITOR",
+            description: "The tall capacitor blocks pick-and-place access to neighboring SMD parts. The machine cannot reach through solid objects, despite what the schedule appears to believe.",
+            choices: [
+                {
+                    text: "Move the capacitor and nearby parts",
+                    result: "The placement clears the assembly tooling. Physics wins this meeting without needing a PowerPoint.",
+                    hours_cost: 6,
+                    dfa_change: 5,
+                    dfm_change: 2,
+                    sanity_change: -3
+                },
+                {
+                    text: "Ask assembly to qualify special tooling",
+                    result: "Assembly approves a more expensive process. The tooling can now do what the layout was supposed to allow.",
+                    hours_cost: 3,
+                    days_cost: 1,
+                    budget_change: -5,
+                    dfa_change: 2,
+                    sanity_change: -2
+                },
+                {
+                    text: "Select a qualified low-profile capacitor",
+                    result: "The replacement fits the assembly envelope. Purchasing receives another unexpected character-development arc.",
+                    hours_cost: 8,
+                    budget_change: -8,
+                    dfa_change: 4,
+                    dfm_change: 3,
+                    sanity_change: -4
+                },
+                {
+                    text: "Keep it and make assembly work manually",
+                    result: "Placement stays. Assembly inherits extra handwork, extra risk, and a fresh reason to hate this board.",
+                    hours_cost: 1,
+                    risk_change: 7,
+                    dfa_change: -6,
+                    sanity_change: -3,
+                    set_flags: ["assembly_access_unverified"]
+                }
+            ]
+        }
     ];
 
+    var _events = create_events_from_pack(EventStage.PLACEMENT, _specs);
 
-    // --------------------------------------------------
-    // BUILD STANDARDIZED EVENT
-    // --------------------------------------------------
+    // Preserved, tested pack in the existing Script33 resource.
+    var _pack = create_pcb_placement_pack_01();
 
-    var _assembly_event = create_decision_event(
-        "PCB-0009",
-        EventStage.PLACEMENT,
-        EventCategory.ENGINEERING,
-        "ASSEMBLY ACCESS CONFLICT!",
-        "Assembly reports that a tall capacitor blocks "
-        + "pick-and-place access to nearby SMD parts. "
-        + "Production needs a solution before placement "
-        + "is frozen.",
-        [
-            _reposition,
-            _tooling_review,
-            _replace_component,
-            _manual_assembly
-        ]
-    );
-
-    if (is_struct(_assembly_event))
+    static _pack_qa_reported = false;
+    if (!_pack_qa_reported)
     {
-        array_push(_events, _assembly_event);
+        _pack_qa_reported = true;
+        show_debug_message(
+            "EVENT PACK QA: Placement pack 01 count = "
+            + string(array_length(_pack))
+            + (array_length(_pack) == 21 ? " (PASS)" : " (FAILED)")
+        );
     }
 
+    for (var _i = 0; _i < array_length(_pack); _i++)
+    {
+        array_push(_events, _pack[_i]);
+    }
 
     return _events;
+}
+
+// Compatibility with the previous public function name.
+function create_pcb_placement_event_pool()
+{
+    return create_pcb_placement();
 }

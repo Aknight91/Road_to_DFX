@@ -7,214 +7,214 @@ function create_pcb_placement_pack_01()
     var _specs = [
         {
             id: "PCB-0010",
-            title: "THERMAL HOTSPOT DETECTED!",
-            description: "A power regulator may overheat the nearby temperature-sensitive components. Placement is nearly frozen.",
+            title: "THERMAL HOTSPOT: A VERY LOCAL SUMMER",
+            description: "A power regulator is cooking the temperature-sensitive parts next door. Placement is nearly frozen, making this a wonderful time to discover that heat spreads.",
             choices: [
-                {text: "Relocate the regulator", result: "The hot component now has breathing room.", hours_cost: 8, dfm_change: 4, risk_change: -2, sanity_change: -4},
-                {text: "Improve copper and thermal via coverage", result: "The heat-spreading plan is updated at added fabrication cost.", hours_cost: 6, budget_change: -5, dfm_change: 3, sanity_change: -3},
-                {text: "Waive the thermal concern", result: "Reliability engineering has kept a copy of your waiver.", hours_cost: 1, risk_change: 8, dfm_change: -6, sanity_change: -4, set_flags: ["thermal_risk_unresolved"]}
+                {text: "Move the regulator somewhere sensible", result: "The regulator moves and its neighbors can breathe again. Thermal management is no longer a neighborhood dispute.", hours_cost: 8, dfm_change: 4, risk_change: -2, sanity_change: -4},
+                {text: "Improve copper and thermal-via coverage", result: "Heat spreading improves. The fab quote rises, but the temperature plot is considerably less exciting.", hours_cost: 6, budget_change: -5, dfm_change: 3, sanity_change: -3},
+                {text: "Waive the thermal issue and ship the layout", result: "The hotspot stays. Reliability now has a calendar reminder titled 'inevitable.'", hours_cost: 1, risk_change: 8, dfm_change: -6, sanity_change: -4, set_flags: ["thermal_risk_unresolved"]}
             ]
         },
         {
             id: "PCB-0011",
-            title: "TEST POINTS BLOCKED!",
-            description: "Large components prevent automated test probes from reaching several critical nets.",
+            title: "TEST POINTS HIDDEN BY COMPONENTS",
+            description: "Large components block the fixture probes from critical nets. The test points are technically present, in the same way treasure is present under a parking garage.",
             choices: [
-                {text: "Rearrange placement and add test points", result: "Test engineering now has probe access to the affected nets.", hours_cost: 7, dft_change: 6, dfa_change: 1, sanity_change: -3},
-                {text: "Commission an alternate fixture strategy", result: "A custom fixture has been approved, with added cost.", hours_cost: 4, days_cost: 1, budget_change: -6, dft_change: 4, sanity_change: -2},
-                {text: "Release the placement with reduced coverage", result: "Several nets will remain untested by the fixture.", hours_cost: 1, dft_change: -7, risk_change: 6, sanity_change: -4, set_flags: ["test_access_unverified"]}
+                {text: "Rearrange placement and add accessible probes", result: "The critical nets are reachable again. The bed-of-nails fixture no longer needs a tunnel-boring machine.", hours_cost: 7, dft_change: 6, dfa_change: 1, sanity_change: -3},
+                {text: "Qualify an alternate test fixture", result: "Test engineering approves a custom fixture. Access is restored at the sort of price that earns its own meeting.", hours_cost: 4, days_cost: 1, budget_change: -6, dft_change: 4, sanity_change: -2},
+                {text: "Keep placement and accept reduced coverage", result: "Several nets remain inaccessible. The production test strategy now includes the phrase 'probably fine.'", hours_cost: 1, dft_change: -7, risk_change: 6, sanity_change: -4, set_flags: ["test_access_unverified"]}
             ]
         },
         {
             id: "PCB-0012",
-            title: "FIDUCIAL IN THE SHADOW!",
-            description: "A tall connector blocks the assembly camera's line of sight to a global fiducial.",
+            title: "FIDUCIAL UNDERCOVER: CAMERA SEES NOTHING",
+            description: "A tall connector blocks the assembly camera's view of a global fiducial. The marker is exactly where the drawing says it is, which is not where the camera can see it.",
             choices: [
-                {text: "Move the fiducial into a clear zone", result: "The vision system can locate the board reliably.", hours_cost: 4, dfa_change: 4, sanity_change: -2},
-                {text: "Ask assembly to qualify another target", result: "A revised camera setup is approved after review.", hours_cost: 2, days_cost: 1, dfa_change: 2, budget_change: -3, sanity_change: -2},
-                {text: "Keep the blocked fiducial", result: "The board may require manual alignment at assembly.", hours_cost: 1, dfa_change: -5, risk_change: 5, sanity_change: -3, set_flags: ["fiducial_visibility_unverified"]}
+                {text: "Move the fiducial into clear sight", result: "The vision system sees the target. A bold breakthrough in the science of unobstructed lines of sight.", hours_cost: 4, dfa_change: 4, sanity_change: -2},
+                {text: "Have assembly qualify an alternate target", result: "Assembly approves another camera target. The machine can locate the board without psychic powers.", hours_cost: 2, days_cost: 1, dfa_change: 2, budget_change: -3, sanity_change: -2},
+                {text: "Leave the fiducial behind the connector", result: "The fiducial remains invisible. The pick-and-place machine politely refuses to imagine it.", hours_cost: 1, dfa_change: -5, risk_change: 5, sanity_change: -3, set_flags: ["fiducial_visibility_unverified"]}
             ]
         },
         {
             id: "PCB-0013",
-            title: "DECOUPLING CAPACITOR TOO FAR AWAY!",
-            description: "The electrical engineer spots decoupling capacitors far from a high-speed IC's power pins.",
+            title: "DECOUPLERS: CLOSE IN THE SCHEMATIC",
+            description: "The bypass capacitors sit far from the IC power pins. On a schematic everything was next to everything. Copper, unfortunately, measures distance in real units.",
             choices: [
-                {text: "Move decouplers beside the power pins", result: "The return path and local bypassing are improved.", hours_cost: 6, dfm_change: 2, risk_change: -3, sanity_change: -3},
-                {text: "Review the power distribution network", result: "The PDN review identifies a practical placement compromise.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
-                {text: "Trust the existing capacitor locations", result: "The power-integrity concern remains open.", hours_cost: 1, risk_change: 7, sanity_change: -3, set_flags: ["pdn_placement_unverified"]}
+                {text: "Move decouplers next to the power pins", result: "The local bypass paths improve. The capacitors are finally doing more than decorating the BOM.", hours_cost: 6, dfm_change: 2, risk_change: -3, sanity_change: -3},
+                {text: "Review the PDN before changing placement", result: "The PDN analysis identifies a controlled fix. Someone prints the plots and calls it collaboration.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
+                {text: "Leave capacitors where they look tidy", result: "The bypassing remains questionable. The IC will have to appreciate the visual symmetry.", hours_cost: 1, risk_change: 7, sanity_change: -3, set_flags: ["pdn_placement_unverified"]}
             ]
         },
         {
             id: "PCB-0014",
-            title: "MECHANICAL KEEP-OUT VIOLATION!",
-            description: "A placement check reveals components inside a reserved enclosure keep-out region.",
+            title: "KEEP-OUT ZONE: COMPONENTS DID NOT GET THE MEMO",
+            description: "Parts have wandered into the enclosure keepout. The mechanical model calls it a collision; the placement report calls it efficient use of space.",
             choices: [
-                {text: "Move the conflicting components", result: "The enclosure keep-out is respected.", hours_cost: 5, dfa_change: 4, sanity_change: -3},
-                {text: "Negotiate a mechanical exception", result: "Mechanical engineering documents an approved change.", hours_cost: 3, days_cost: 1, dfa_change: 2, sanity_change: -2},
-                {text: "Assume the enclosure will be adjusted", result: "The mechanical interference remains unresolved.", hours_cost: 1, dfa_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["placement_keepout_unresolved"]}
+                {text: "Move components out of the keepout", result: "The enclosure and PCB now agree on what occupies physical space. This is surprisingly good news.", hours_cost: 5, dfa_change: 4, sanity_change: -3},
+                {text: "Negotiate a documented mechanical exception", result: "Mechanical engineering approves a revised interface. The exception exists in CAD, not just in an email.", hours_cost: 3, days_cost: 1, dfa_change: 2, sanity_change: -2},
+                {text: "Assume the enclosure team will move its walls", result: "The components stay. Mechanical engineering has not volunteered to redesign the laws of geometry.", hours_cost: 1, dfa_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["placement_keepout_unresolved"]}
             ]
         },
         {
             id: "PCB-0015",
-            title: "POLARITY MARKS DON'T MATCH!",
-            description: "Several polarized components have rotations inconsistent with the assembly drawing.",
+            title: "POLARITY MARKS: WHICH WAY IS UP?",
+            description: "Several polarized components disagree with the assembly drawing about orientation. The plus signs and rotation arrows have started a small but consequential civil war.",
             choices: [
-                {text: "Audit orientations and correct assembly data", result: "Polarities, rotations and assembly output now agree.", hours_cost: 6, dfa_change: 5, risk_change: -2, sanity_change: -3},
-                {text: "Request a librarian and assembly review", result: "The library and centroid convention are reconciled.", hours_cost: 3, days_cost: 1, dfa_change: 3, sanity_change: -2},
-                {text: "Leave the rotations for the assembler", result: "Assembly must interpret conflicting orientation information.", hours_cost: 1, dfa_change: -7, risk_change: 6, sanity_change: -4, set_flags: ["polarity_orientation_unverified"]}
+                {text: "Audit and correct component orientations", result: "The rotations match approved polarity data. Assembly can populate the board without a guessing contest.", hours_cost: 6, dfa_change: 5, risk_change: -2, sanity_change: -3},
+                {text: "Get CAD library and assembly to verify them", result: "The librarian and assembler agree on the orientation. Everybody takes a screenshot for historical preservation.", hours_cost: 3, days_cost: 1, dfa_change: 3, sanity_change: -2},
+                {text: "Let assembly interpret the rotations", result: "The ambiguity remains. The assembler has been promoted, without consent, to electrical design authority.", hours_cost: 1, dfa_change: -7, risk_change: 6, sanity_change: -4, set_flags: ["polarity_orientation_unverified"]}
             ]
         },
         {
             id: "PCB-0016",
-            title: "AOI CAMERA CAN'T SEE THE JOINTS!",
-            description: "A shield can obstruct automated optical inspection of nearby solder joints.",
+            title: "AOI CAMERA: NOW INSPECTING THE SHIELD",
+            description: "The new shield blocks optical inspection of nearby solder joints. The AOI camera can confirm that the shield looks lovely; the joints remain a mystery.",
             choices: [
-                {text: "Rearrange parts to expose the joints", result: "Inspection access has been restored.", hours_cost: 6, dfa_change: 3, dft_change: 4, sanity_change: -3},
-                {text: "Approve an alternate inspection plan", result: "Quality agrees to a supplementary inspection process.", hours_cost: 3, days_cost: 1, budget_change: -4, dft_change: 3, sanity_change: -2},
-                {text: "Skip the obstructed inspection locations", result: "Some solder joints will escape the planned AOI coverage.", hours_cost: 1, dft_change: -6, risk_change: 7, sanity_change: -3, set_flags: ["aoi_coverage_incomplete"]}
+                {text: "Rearrange parts to expose the solder joints", result: "AOI can see the joints. The inspection plan once again contains actual inspection.", hours_cost: 6, dfa_change: 3, dft_change: 4, sanity_change: -3},
+                {text: "Qualify an alternate inspection method", result: "Quality approves another inspection path. It takes more effort, but it does involve looking at the joints.", hours_cost: 3, days_cost: 1, budget_change: -4, dft_change: 3, sanity_change: -2},
+                {text: "Skip inspection where the camera cannot see", result: "The hidden joints go unchecked. Manufacturing quality has been asked to trust their personalities.", hours_cost: 1, dft_change: -6, risk_change: 7, sanity_change: -3, set_flags: ["aoi_coverage_incomplete"]}
             ]
         },
         {
             id: "PCB-0017",
-            title: "REWORK ACCESS BLOCKED!",
-            description: "The service engineer cannot reach a likely replacement component with a hot-air tool.",
+            title: "REWORK ACCESS: THE TOOL IS NOT A GHOST",
+            description: "The service engineer cannot get a hot-air tool to a likely replacement part. The layout looks great until somebody needs to repair anything on it.",
             choices: [
-                {text: "Create a rework access corridor", result: "The component can be replaced without disturbing its neighbors.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
-                {text: "Review a specialized rework process", result: "The rework team approves a slower but workable procedure.", hours_cost: 3, days_cost: 1, budget_change: -3, dfa_change: 2, sanity_change: -2},
-                {text: "Accept limited field repairability", result: "Service access will be poor if the component fails.", hours_cost: 1, dfa_change: -5, risk_change: 4, sanity_change: -3, set_flags: ["rework_access_limited"]}
+                {text: "Create a proper rework-access corridor", result: "The component is reachable. Service engineering briefly considers sending a thank-you card.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
+                {text: "Review a specialized rework method", result: "A qualified rework approach is documented. The repair technician gets a procedure instead of an obstacle course.", hours_cost: 3, days_cost: 1, budget_change: -3, dfa_change: 2, sanity_change: -2},
+                {text: "Accept that this part is basically permanent", result: "Repairability stays limited. The field-service plan now relies heavily on the word 'disposable.'", hours_cost: 1, dfa_change: -5, risk_change: 4, sanity_change: -3, set_flags: ["rework_access_limited"]}
             ]
         },
         {
             id: "PCB-0018",
-            title: "MOUNTING SCREW ACCESS LOST!",
-            description: "The enclosure team cannot fit a screwdriver past a tall component near a mounting hole.",
+            title: "SCREWDRIVER CLEARANCE: A NEW THEORY",
+            description: "A tall component blocks the tool path to a mounting screw. The screw itself fits perfectly. Unfortunately, the person installing it must exist in three dimensions.",
             choices: [
-                {text: "Move the component beyond the tool envelope", result: "Mechanical assembly clearance is restored.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
-                {text: "Qualify a different fastener or tool", result: "The hardware team approves a revised fastening process.", hours_cost: 3, days_cost: 1, budget_change: -4, dfa_change: 2, sanity_change: -2},
-                {text: "Expect assembly to work around it", result: "A mounting operation now depends on improvised tooling.", hours_cost: 1, dfa_change: -6, risk_change: 5, sanity_change: -3, set_flags: ["mount_access_unverified"]}
+                {text: "Move the part out of the tool envelope", result: "A screwdriver now reaches the screw. Manufacturing celebrates the return of normal hand geometry.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
+                {text: "Qualify a different fastener or tool", result: "Mechanical engineering approves another tool path. Assembly no longer needs the fingers of a watchmaker.", hours_cost: 3, days_cost: 1, budget_change: -4, dfa_change: 2, sanity_change: -2},
+                {text: "Tell assembly to be more flexible", result: "The obstacle remains. The technician has been advised to rotate their wrist through solid matter.", hours_cost: 1, dfa_change: -6, risk_change: 5, sanity_change: -3, set_flags: ["mount_access_unverified"]}
             ]
         },
         {
             id: "PCB-0019",
-            title: "BGA ORIENTATION BLOCKS ESCAPE!",
-            description: "The selected BGA orientation funnels high-speed pins toward a dense mechanical boundary.",
+            title: "BGA ROTATION: AN ESCAPE ROOM WITHOUT EXITS",
+            description: "The BGA orientation drives high-speed nets straight into a crowded mechanical boundary. Routing has not started, making this the cheapest moment to admit the mistake.",
             choices: [
-                {text: "Rotate or relocate the BGA before routing", result: "Critical escape channels have been opened up.", hours_cost: 8, dfm_change: 4, risk_change: -2, sanity_change: -4},
-                {text: "Hold an early escape feasibility review", result: "Routing specialists identify a lower-risk arrangement.", hours_cost: 4, days_cost: 1, dfm_change: 2, sanity_change: -2},
-                {text: "Leave the BGA and solve it during routing", result: "The dense pin escape problem is deferred.", hours_cost: 1, risk_change: 7, dfm_change: -4, sanity_change: -3, set_flags: ["bga_escape_deferred"]}
+                {text: "Rotate or relocate the BGA now", result: "The escape channels are restored. Routing engineers stop drawing tiny angry arrows on the placement.", hours_cost: 8, dfm_change: 4, risk_change: -2, sanity_change: -4},
+                {text: "Hold an early escape-feasibility review", result: "The team approves a workable fanout plan. Disaster is canceled before its scheduled appearance.", hours_cost: 4, days_cost: 1, dfm_change: 2, sanity_change: -2},
+                {text: "Keep the BGA; future routing can deal with it", result: "The BGA stays put. Future You has been nominated for an award in impossible trace geometry.", hours_cost: 1, risk_change: 7, dfm_change: -4, sanity_change: -3, set_flags: ["bga_escape_deferred"]}
             ]
         },
         {
             id: "PCB-0020",
-            title: "TEST FIXTURE COLLISION!",
-            description: "An underside component collides with a bed-of-nails fixture support position.",
+            title: "TEST FIXTURE AND COMPONENT CLAIM SAME SPACE",
+            description: "A bottom-side component occupies a bed-of-nails fixture support location. Both objects insist they belong there. The mechanical model is unwilling to arbitrate.",
             choices: [
-                {text: "Clear the test fixture support zone", result: "The fixture can support and probe the board correctly.", hours_cost: 6, dft_change: 5, dfa_change: 2, sanity_change: -3},
-                {text: "Ask test engineering to redesign the fixture", result: "A different support layout is approved at added cost.", hours_cost: 3, days_cost: 1, budget_change: -6, dft_change: 3, sanity_change: -2},
-                {text: "Accept the unsupported fixture region", result: "Fixture alignment and probe consistency are now at risk.", hours_cost: 1, dft_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["fixture_support_unverified"]}
+                {text: "Move the part away from the fixture support", result: "The fixture support clears the PCB. Both designs now fit in the same universe.", hours_cost: 6, dft_change: 5, dfa_change: 2, sanity_change: -3},
+                {text: "Ask test to redesign the support", result: "Test engineering approves a new fixture. The added cost is the price of negotiating with a finished layout.", hours_cost: 3, days_cost: 1, budget_change: -6, dft_change: 3, sanity_change: -2},
+                {text: "Leave the fixture support unsupported", result: "The fixture now has a weak spot. Test engineering begins investigating whether wishful thinking has a load rating.", hours_cost: 1, dft_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["fixture_support_unverified"]}
             ]
         },
         {
             id: "PCB-0021",
-            title: "CRYSTAL BESIDE THE SWITCH NODE!",
-            description: "A sensitive clock crystal sits next to a noisy switching regulator area.",
+            title: "CRYSTAL NEXT TO A SWITCHING CONVERTER",
+            description: "The reference crystal sits beside a noisy switch node. It is an excellent location if the goal is to teach the oscillator about electromagnetic interference.",
             choices: [
-                {text: "Move the crystal and clean up the placement", result: "The clock circuitry is farther from the switching noise.", hours_cost: 6, risk_change: -3, dfm_change: 2, sanity_change: -3},
-                {text: "Get a signal-integrity placement review", result: "The review identifies an acceptable clock placement.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
-                {text: "Keep it and hope the oscillator is tolerant", result: "Clock integrity will have to be proven later.", hours_cost: 1, risk_change: 7, sanity_change: -4, set_flags: ["clock_noise_unverified"]}
+                {text: "Move the crystal to a quieter location", result: "The crystal moves away from the noise source. Clock stability gets a fighting chance.", hours_cost: 6, risk_change: -3, dfm_change: 2, sanity_change: -3},
+                {text: "Request a signal-integrity placement review", result: "The team verifies a cleaner placement. The oscillator is no longer the power stage's closest friend.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
+                {text: "Trust the oscillator to be understanding", result: "The crystal remains beside the switching node. Jitter has been given an open invitation.", hours_cost: 1, risk_change: 7, sanity_change: -4, set_flags: ["clock_noise_unverified"]}
             ]
         },
         {
             id: "PCB-0022",
-            title: "HEATSINK CAN'T BE INSTALLED!",
-            description: "A connector obstructs the installation path for the regulator's heatsink.",
+            title: "HEATSINK INSTALLATION: ACCESS DENIED",
+            description: "A connector blocks the installation path for the regulator heatsink. The heatsink works beautifully, provided somebody can pass it through the connector.",
             choices: [
-                {text: "Move components outside the heatsink envelope", result: "The heatsink now fits without damaging neighboring parts.", hours_cost: 7, dfa_change: 5, dfm_change: 2, sanity_change: -3},
-                {text: "Review an alternate cooling assembly", result: "Mechanical and thermal teams approve another cooling option.", hours_cost: 4, days_cost: 1, budget_change: -5, dfa_change: 3, sanity_change: -2},
-                {text: "Leave assembly to fit the heatsink somehow", result: "The heatsink installation remains unverified.", hours_cost: 1, dfa_change: -7, risk_change: 6, sanity_change: -3, set_flags: ["heatsink_install_unverified"]}
+                {text: "Clear the heatsink installation envelope", result: "The heatsink can be fitted normally. The assembly instructions become much shorter.", hours_cost: 7, dfa_change: 5, dfm_change: 2, sanity_change: -3},
+                {text: "Qualify a different thermal assembly", result: "Engineering approves an alternate cooler. Thermals remain acceptable and assembly no longer requires magic.", hours_cost: 4, days_cost: 1, budget_change: -5, dfa_change: 3, sanity_change: -2},
+                {text: "Let assembly figure out how to insert it", result: "The interference stays. The assembly team has received an impossible instruction with a due date.", hours_cost: 1, dfa_change: -7, risk_change: 6, sanity_change: -3, set_flags: ["heatsink_install_unverified"]}
             ]
         },
         {
             id: "PCB-0023",
-            title: "SERVICE HEADER IS INACCESSIBLE!",
-            description: "The programming and debug header will be covered by the enclosure wall.",
+            title: "DEBUG HEADER: SEALED FOR YOUR PROTECTION",
+            description: "The enclosure wall covers the programming header. The finished product will be very secure against firmware updates, including authorized ones.",
             choices: [
-                {text: "Relocate the header into the service zone", result: "Technicians can now reach the programming interface.", hours_cost: 5, dft_change: 4, dfa_change: 2, sanity_change: -3},
-                {text: "Approve an alternate programming adapter", result: "An adapter solves access at the expense of tooling cost.", hours_cost: 3, days_cost: 1, budget_change: -4, dft_change: 2, sanity_change: -2},
-                {text: "Program boards before enclosure assembly", result: "Post-assembly service access will not be available.", hours_cost: 1, dft_change: -4, risk_change: 5, sanity_change: -3, set_flags: ["programming_access_limited"]}
+                {text: "Relocate the header to a serviceable spot", result: "The programming connector is accessible. Field technicians can now do their jobs without opening a hole in the housing.", hours_cost: 5, dft_change: 4, dfa_change: 2, sanity_change: -3},
+                {text: "Approve a qualified programming adapter", result: "A special adapter solves the access problem. It even has a drawing that shows how it fits.", hours_cost: 3, days_cost: 1, budget_change: -4, dft_change: 2, sanity_change: -2},
+                {text: "Program everything before final enclosure assembly", result: "The header stays buried. Every future firmware fix will be an interesting logistical event.", hours_cost: 1, dft_change: -4, risk_change: 5, sanity_change: -3, set_flags: ["programming_access_limited"]}
             ]
         },
         {
             id: "PCB-0024",
-            title: "RF ANTENNA IS DETUNED!",
-            description: "A metal shield has been placed beside the PCB antenna's clearance region.",
+            title: "ANTENNA KEEP-OUT: NOW WITH BONUS METAL",
+            description: "A shield sits beside the PCB antenna clearance region. RF engineering requested free space; placement interpreted that as an invitation to put metal there.",
             choices: [
-                {text: "Move the shield outside the antenna keep-out", result: "The antenna clearance region is restored.", hours_cost: 7, risk_change: -3, dfm_change: 2, sanity_change: -3},
-                {text: "Request antenna tuning and enclosure review", result: "RF engineering approves a revised antenna environment.", hours_cost: 4, days_cost: 1, budget_change: -4, risk_change: -2, sanity_change: -2},
-                {text: "Ignore the suspected detuning", result: "Wireless performance remains an unverified risk.", hours_cost: 1, risk_change: 8, sanity_change: -4, set_flags: ["rf_antenna_unverified"]}
+                {text: "Move the shield outside the antenna region", result: "The clearance is restored. The radio has a chance to communicate beyond the enclosure.", hours_cost: 7, risk_change: -3, dfm_change: 2, sanity_change: -3},
+                {text: "Request antenna tuning and enclosure review", result: "RF engineering qualifies a revised arrangement. The range estimate once again has evidence behind it.", hours_cost: 4, days_cost: 1, budget_change: -4, risk_change: -2, sanity_change: -2},
+                {text: "Ignore the detuning and trust the antenna", result: "The metal stays. The antenna has been asked to negotiate with physics over the air.", hours_cost: 1, risk_change: 8, sanity_change: -4, set_flags: ["rf_antenna_unverified"]}
             ]
         },
         {
             id: "PCB-0025",
-            title: "HIGH-VOLTAGE PARTS TOO CLOSE!",
-            description: "Two high-voltage components crowd a safety clearance zone in the proposed placement.",
+            title: "HIGH-VOLTAGE CLEARANCE: TOO CLOSE FOR COMFORT",
+            description: "Two high-voltage components encroach on a required safety spacing zone. This is no longer a layout preference; it is a potential safety failure. The keepout is not merely decorative.",
             choices: [
-                {text: "Reposition parts to meet reviewed clearances", result: "The component spacing now meets the documented requirement.", hours_cost: 7, dfm_change: 5, risk_change: -3, sanity_change: -3},
-                {text: "Request a safety engineering review", result: "Safety engineering provides an approved placement solution.", hours_cost: 4, days_cost: 1, dfm_change: 3, sanity_change: -2},
-                {text: "Accept the crowded placement", result: "The safety clearance issue remains unresolved.", hours_cost: 1, risk_change: 9, dfm_change: -7, sanity_change: -4, set_flags: ["hv_spacing_unverified"]}
+                {text: "Move components to meet the safety limits", result: "The spacing now meets reviewed requirements. The board no longer treats arcing as a connectivity feature.", hours_cost: 7, dfm_change: 5, risk_change: -3, sanity_change: -3},
+                {text: "Request a formal safety engineering review", result: "Safety engineering approves a compliant disposition. The requirements outrank the placement aesthetics.", hours_cost: 4, days_cost: 1, dfm_change: 3, sanity_change: -2},
+                {text: "Keep the crowded parts and sign a waiver", result: "The clearance risk remains. A waiver is paperwork, not an insulator.", hours_cost: 1, risk_change: 9, dfm_change: -7, sanity_change: -4, set_flags: ["hv_spacing_unverified"]}
             ]
         },
         {
             id: "PCB-0026",
-            title: "MATING CONNECTOR WON'T FIT!",
-            description: "The mating cable connector cannot be inserted with the board inside its enclosure.",
+            title: "MATING CONNECTOR: CONNECTOR CANNOT MATE",
+            description: "The mating cable cannot be inserted once the board is inside the enclosure. The connector fits the PCB perfectly, which was apparently the only geometry anyone checked.",
             choices: [
-                {text: "Reorient the connector for mating access", result: "The cable can now be inserted without disassembly.", hours_cost: 6, dfa_change: 5, sanity_change: -3},
-                {text: "Coordinate a cable assembly change", result: "A new mating harness is qualified at additional cost.", hours_cost: 4, days_cost: 1, budget_change: -5, dfa_change: 3, sanity_change: -2},
-                {text: "Tell final assembly to connect it first", result: "Service replacement may require dismantling the unit.", hours_cost: 1, dfa_change: -6, risk_change: 5, sanity_change: -3, set_flags: ["connector_mating_access_limited"]}
+                {text: "Reorient the connector for cable access", result: "The cable can now be installed. Product assembly may proceed without an interpretive dance.", hours_cost: 6, dfa_change: 5, sanity_change: -3},
+                {text: "Coordinate a revised cable assembly", result: "The cable team approves a workable mating solution. Another drawing finally reflects reality.", hours_cost: 4, days_cost: 1, budget_change: -5, dfa_change: 3, sanity_change: -2},
+                {text: "Connect the cable before closing the housing", result: "The assembly sequence becomes fragile. Repair technicians will one day read this instruction in disbelief.", hours_cost: 1, dfa_change: -6, risk_change: 5, sanity_change: -3, set_flags: ["connector_mating_access_limited"]}
             ]
         },
         {
             id: "PCB-0027",
-            title: "PANEL RAIL CLEARANCE MISSING!",
-            description: "SMD components intrude into the edge clearance required for depanelization rails.",
+            title: "PANEL RAILS VS. EDGE COMPONENTS",
+            description: "SMD components invade the clearance needed for depanelization rails. The board looks compact, but the panel tooling would like somewhere to exist.",
             choices: [
-                {text: "Shift edge components beyond the rail zone", result: "The panel rails and board-edge process are now compatible.", hours_cost: 5, dfm_change: 5, sanity_change: -3},
-                {text: "Ask fabrication for another panel strategy", result: "The fabricator approves a revised panel at extra cost.", hours_cost: 3, days_cost: 1, budget_change: -4, dfm_change: 3, sanity_change: -2},
-                {text: "Keep the edge components in place", result: "Depanelization damage is now a manufacturing risk.", hours_cost: 1, dfm_change: -6, risk_change: 7, sanity_change: -3, set_flags: ["depanel_clearance_unverified"]}
+                {text: "Move edge parts outside the rail area", result: "Fabrication has room for the panel rails. Components are no longer the sacrificial tooling.", hours_cost: 5, dfm_change: 5, sanity_change: -3},
+                {text: "Ask fabrication for a new panel layout", result: "The fab approves a different panel strategy. It costs more than moving a part, but at least it is buildable.", hours_cost: 3, days_cost: 1, budget_change: -4, dfm_change: 3, sanity_change: -2},
+                {text: "Leave the parts and hope depanelization is gentle", result: "Edge components remain at risk. The router has not promised to steer around them out of courtesy.", hours_cost: 1, dfm_change: -6, risk_change: 7, sanity_change: -3, set_flags: ["depanel_clearance_unverified"]}
             ]
         },
         {
             id: "PCB-0028",
-            title: "BOTTOM-SIDE PART HITS A STANDOFF!",
-            description: "A bottom-side component overlaps an enclosure standoff in the assembly model.",
+            title: "BOTTOM-SIDE PART MEETS ENCLOSURE STANDOFF",
+            description: "The assembly model shows a bottom-side component overlapping an enclosure standoff. Both occupy the same coordinates. One of them will lose, and it will probably be expensive.",
             choices: [
-                {text: "Move the underside component", result: "The standoff and component no longer collide.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
-                {text: "Review a shorter standoff", result: "Mechanical engineering approves alternate hardware.", hours_cost: 3, days_cost: 1, budget_change: -3, dfa_change: 2, sanity_change: -2},
-                {text: "Assume the enclosure drawing is out of date", result: "Physical fit remains unverified.", hours_cost: 1, dfa_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["standoff_collision_unverified"]}
+                {text: "Move the component away from the standoff", result: "The collision is removed. The PCB can now sit flat without turning the component into a mechanical fuse.", hours_cost: 5, dfa_change: 5, sanity_change: -3},
+                {text: "Review a shorter approved standoff", result: "Mechanical engineering accepts a revised standoff. The enclosure and PCB are back on speaking terms.", hours_cost: 3, days_cost: 1, budget_change: -3, dfa_change: 2, sanity_change: -2},
+                {text: "Assume the enclosure drawing must be wrong", result: "The collision remains because blaming the drawing does not move the metal.", hours_cost: 1, dfa_change: -6, risk_change: 6, sanity_change: -3, set_flags: ["standoff_collision_unverified"]}
             ]
         },
         {
             id: "PCB-0029",
-            title: "HEAVY COMPONENT NEEDS SUPPORT!",
-            description: "Vibration analysis flags a heavy inductor at risk of solder-joint fatigue.",
+            title: "HEAVY INDUCTOR: GRAVITY FILED A REPORT",
+            description: "Vibration analysis predicts solder-joint fatigue on a heavy inductor. The component is doing an excellent impression of a pendulum. The solder joints were not hired as structural brackets.",
             choices: [
-                {text: "Add mechanical support and revise placement", result: "The heavy component now has a qualified support approach.", hours_cost: 6, budget_change: -3, dfa_change: 3, risk_change: -3, sanity_change: -3},
-                {text: "Request a vibration and assembly review", result: "Engineering approves a documented reinforcement solution.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
-                {text: "Assume solder joints will hold", result: "The fatigue risk remains on the project register.", hours_cost: 1, risk_change: 7, dfa_change: -4, sanity_change: -4, set_flags: ["vibration_support_unverified"]}
+                {text: "Add support and adjust the placement", result: "The inductor is mechanically supported. Solder joints can return to their electrical duties.", hours_cost: 6, budget_change: -3, dfa_change: 3, risk_change: -3, sanity_change: -3},
+                {text: "Review vibration and reinforcement options", result: "Engineering approves a reinforcement plan. The heavy part is now supported by something other than confidence.", hours_cost: 4, days_cost: 1, risk_change: -2, sanity_change: -2},
+                {text: "Trust the solder joints to hold forever", result: "The vibration risk remains. Gravity appreciates your optimism but declines to sign the waiver.", hours_cost: 1, risk_change: 7, dfa_change: -4, sanity_change: -4, set_flags: ["vibration_support_unverified"]}
             ]
         },
         {
             // Required final Placement encounter. Never chosen early.
             id: "PLC-REVIEW-001",
             category: EventCategory.MILESTONE,
-            title: "PLACEMENT DESIGN REVIEW!",
-            description: "Placement is ready for a cross-functional review. Assembly, test, mechanical and electrical teams need a disposition before routing begins.",
+            title: "PLACEMENT REVIEW: EVERYONE HAS OPINIONS",
+            description: "Placement is ready for signoff. Assembly, mechanical, electrical and test teams each have final comments, several of which begin with 'one quick thing.' Routing cannot start without a disposition.",
             choices: [
-                {text: "Sign off the reviewed placement package", result: "The placement review is signed off for routing.", hours_cost: 3, dfa_change: 2, dft_change: 1, sanity_change: -2},
-                {text: "Hold a final cross-functional walkthrough", result: "The teams resolve open placement questions and approve routing.", hours_cost: 6, days_cost: 1, dfa_change: 4, dft_change: 2, sanity_change: -3},
-                {text: "Approve with remaining issues documented", result: "The placement is released to routing with open action items.", hours_cost: 1, risk_change: 5, dfm_change: -3, sanity_change: -3, set_flags: ["placement_review_open_items"]}
+                {text: "Sign off the reviewed placement", result: "Placement is approved for routing. The component positions have earned more signatures than some mortgages.", hours_cost: 3, dfa_change: 2, dft_change: 1, sanity_change: -2},
+                {text: "Hold one last cross-functional walkthrough", result: "The teams close open questions. One more meeting prevents a far more entertaining failure later.", hours_cost: 6, days_cost: 1, dfa_change: 4, dft_change: 2, sanity_change: -3},
+                {text: "Approve with open issues clearly documented", result: "Placement advances with unresolved items. The action register is long, but at least it knows who owns the trouble.", hours_cost: 1, risk_change: 5, dfm_change: -3, sanity_change: -3, set_flags: ["placement_review_open_items"]}
             ]
         }
     ];

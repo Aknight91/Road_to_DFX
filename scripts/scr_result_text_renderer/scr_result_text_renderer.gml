@@ -1,4 +1,5 @@
-/// @description Draw clipped decision-result text
+/// @description Draw clipped, scrollable text inside a shared UI region
+/// Used by both decision review and final campaign outcomes.
 
 function draw_clipped_result_text(
     _result_text,
@@ -7,38 +8,31 @@ function draw_clipped_result_text(
     _scroll_offset
 )
 {
-    // Nothing to draw when the message is empty
     if (_result_text == "")
     {
         return;
     }
 
-    // Calculate the available visible height
     var _visible_height = max(
         0,
         _region.y + _region.height - _result_y
     );
 
-    // Don't draw when no vertical space remains
     if (_visible_height <= 0)
     {
         return;
     }
 
-    // Save the current clipping region
-    var _previous_scissor = gpu_get_scissor();
+    var _viewport = {
+        x: _region.x,
+        y: _result_y,
+        width: _region.width,
+        height: _visible_height
+    };
 
-    // Restrict drawing to the results viewport
-    gpu_set_scissor(
-        _region.x,
-        _result_y,
-        _region.width,
-        _visible_height
-    );
+    var _previous = ui_clip_begin(_viewport);
 
-    // Draw the complete result text with scrolling
     draw_set_color(c_black);
-
     draw_text_ext(
         _region.x,
         _result_y - _scroll_offset,
@@ -47,6 +41,5 @@ function draw_clipped_result_text(
         _region.width
     );
 
-    // Restore the previous clipping region
-    gpu_set_scissor(_previous_scissor);
+    ui_clip_end(_previous);
 }

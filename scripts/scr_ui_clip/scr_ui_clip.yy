@@ -1,0 +1,13 @@
+{
+  "$GMScript":"v1",
+  "%Name":"scr_ui_clip",
+  "isCompatibility":false,
+  "isDnD":false,
+  "name":"scr_ui_clip",
+  "parent":{
+    "name":"Layouts",
+    "path":"folders/03_User_Interface/Layouts.yy",
+  },
+  "resourceType":"GMScript",
+  "resourceVersion":"2.0",
+}
